@@ -1,0 +1,17 @@
+{
+  "editor.showUnused": true,
+  "javascript.validate.enable": true,
+  "typescript.validate.enable": true,
+
+  // Tùy chỉnh màu sắc giao diện
+  "workbench.colorCustomizations": {
+    // Chỉnh độ trong suốt của code thừa (Hex color)
+    // #00000000 là trong suốt hoàn toàn
+    // #000000aa là mờ vừa phải
+    // Bạn có thể chỉnh 2 số cuối để tăng giảm độ mờ (00 -> ff)
+    "editorUnnecessaryCode.opacity": "#00000080",
+    
+    // Nếu muốn gạch chân thêm cho dễ nhìn thì bỏ comment dòng dưới
+    // "editorUnnecessaryCode.border": "#ff0000" 
+  }
+}
