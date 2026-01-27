@@ -12,6 +12,7 @@ import React, { useRef, useState } from "react";
 import { EnvelopeSimpleIcon, Lock, User } from "phosphor-react-native";
 import { useRouter } from "expo-router";
 import Animated, { SlideInDown } from "react-native-reanimated";
+import * as SecureStore from "expo-secure-store";
 
 import ScreenWrapper from "@/components/ScreenWrapper";
 import Typo from "@/components/Typo";
@@ -19,23 +20,21 @@ import { colors, radius, spacingX, spacingY } from "@/constants/theme";
 import BackButton from "@/components/BackButton";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
-import { registerSchema } from "@/utils/validation";
+import { loginSchema } from "@/utils/validation";
+import api from "@/utils/api";
 
 const login = () => {
   const emailInputRef = useRef(null);
   const passwordInputRef = useRef(null);
 
   // 2. Tách biệt: Ref này chỉ dùng để lưu Giá trị (Text)
-  const nameValue = useRef("");
   const emailValue = useRef("");
   const passwordValue = useRef("");
-  const confirmPasswordValue = useRef("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const router = useRouter();
   const handleSubmit = async () => {
-    // 1. Xóa lỗi cũ
     setErrors({});
 
     const formData = {
@@ -43,43 +42,48 @@ const login = () => {
       password: passwordValue.current,
     };
 
-    console.log("Dữ liệu gửi đi:", formData);
-
     try {
-      // 2. Dùng .parse() thay vì .safeParse()
-      // Cách này nếu lỗi nó sẽ ném thẳng vào catch, không sợ bị undefined lằng nhằng
-      registerSchema.parse(formData);
+      loginSchema.parse(formData);
 
-      // --- NẾU THÀNH CÔNG (Chạy đến đây nghĩa là không lỗi) ---
       setIsLoading(true);
-      console.log("Dữ liệu sạch:", formData);
 
-      setTimeout(() => {
-        setIsLoading(false);
-        Alert.alert("Thành công", "Đăng ký thành công!");
-      }, 1000);
+      const response = await api.post("/auth/login", formData);
+
+      setIsLoading(false);
+
+      if (response.data.success) {
+        const { token, user } = response.data.data;
+        await SecureStore.setItemAsync("authToken", token);
+        console.log("Đã lưu token an toàn:", token);
+        router.replace("/(main)/home");
+      }
     } catch (error) {
-      // --- NẾU CÓ LỖI ---
-      console.log("Bắt được lỗi rồi:", error); // Log ra xem mặt mũi nó thế nào
+      setIsLoading(false);
+      console.log("Login Error:", error);
 
-      // Kiểm tra xem có phải lỗi của Zod không để hiển thị
-      const newErrors = {};
+      // 2. Lỗi backend
+      if (error.response) {
+        Alert.alert("Đăng nhập thất bại", error.response.data.message);
+      }
+      // 3. Lỗi Zod
+      else if (error.errors || error.issues) {
+        const newErrors = {};
+        const issues = error.errors || error.issues;
 
-      // ZodError luôn có thuộc tính errors hoặc issues
-      const issues = error.errors || error.issues;
-
-      if (issues) {
         issues.forEach((err) => {
-          // Chỉ gán lỗi nếu chưa có lỗi nào cho trường này
           if (!newErrors[err.path[0]]) {
             newErrors[err.path[0]] = err.message;
           }
         });
+
         setErrors(newErrors);
+      }
+      // 4. Lỗi mạng
+      else {
+        Alert.alert("Lỗi", "Không thể kết nối đến Server");
       }
     }
   };
-  console.log(errors);
 
   return (
     <KeyboardAvoidingView

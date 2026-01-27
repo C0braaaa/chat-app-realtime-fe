@@ -28,3 +28,16 @@ export const registerSchema = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
+export const loginSchema = z.object({
+  email: z
+    .string({ required_error: "Email is required" })
+    .trim()
+    .min(1, "Email is required")
+    .email("Invalid email address"),
+
+  password: z
+    .string({ required_error: "Password is required" })
+    .min(1, "Password is required") // Quan trọng: Để cuối để ưu tiên hiển thị
+    .min(6, "Password must be at least 6 characters"),
+});

@@ -20,6 +20,7 @@ import BackButton from "@/components/BackButton";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { registerSchema } from "@/utils/validation";
+import api from "@/utils/api";
 
 const register = () => {
   const nameInputRef = useRef(null);
@@ -37,9 +38,7 @@ const register = () => {
   const [errors, setErrors] = useState({});
   const router = useRouter();
   const handleSubmit = async () => {
-    // 1. Xóa lỗi cũ
     setErrors({});
-
     const formData = {
       name: nameValue.current,
       email: emailValue.current,
@@ -47,43 +46,57 @@ const register = () => {
       confirmPassword: confirmPasswordValue.current,
     };
 
-    console.log("Dữ liệu gửi đi:", formData);
-
     try {
-      // 2. Dùng .parse() thay vì .safeParse()
-      // Cách này nếu lỗi nó sẽ ném thẳng vào catch, không sợ bị undefined lằng nhằng
+      // 1. Validate Frontend (Zod)
       registerSchema.parse(formData);
 
-      // --- NẾU THÀNH CÔNG (Chạy đến đây nghĩa là không lỗi) ---
       setIsLoading(true);
-      console.log("Dữ liệu sạch:", formData);
 
-      setTimeout(() => {
-        setIsLoading(false);
-        Alert.alert("Thành công", "Đăng ký thành công!");
-      }, 1000);
+      // 2. Gọi API bằng Axios (Gọn hơn Fetch nhiều)
+      // Không cần điền http://... nữa vì đã cấu hình trong api.js rồi
+      const response = await api.post("auth/register", {
+        name: nameValue.current,
+        email: emailValue.current,
+        password: passwordValue.current,
+      });
+
+      setIsLoading(false);
+
+      if (response.data.success) {
+        router.push("/(auth)/login");
+      }
     } catch (error) {
-      // --- NẾU CÓ LỖI ---
-      console.log("Bắt được lỗi rồi:", error); // Log ra xem mặt mũi nó thế nào
+      setIsLoading(false);
+      console.log("Lỗi:", error);
 
-      // Kiểm tra xem có phải lỗi của Zod không để hiển thị
-      const newErrors = {};
-
-      // ZodError luôn có thuộc tính errors hoặc issues
-      const issues = error.errors || error.issues;
-
-      if (issues) {
+      // 3. Xử lý lỗi từ Backend (Axios ném lỗi vào error.response)
+      if (error.response) {
+        // Lỗi do Backend trả về (ví dụ: Email trùng -> 400 Bad Request)
+        Alert.alert(
+          "Đăng ký thất bại",
+          error.response.data.message || "Có lỗi xảy ra",
+        );
+      }
+      // 4. Xử lý lỗi Validate Zod
+      else if (error.errors || error.issues) {
+        const newErrors = {};
+        const issues = error.errors || error.issues;
         issues.forEach((err) => {
-          // Chỉ gán lỗi nếu chưa có lỗi nào cho trường này
           if (!newErrors[err.path[0]]) {
             newErrors[err.path[0]] = err.message;
           }
         });
         setErrors(newErrors);
       }
+      // 5. Lỗi mạng (Không kết nối được server)
+      else {
+        Alert.alert(
+          "Lỗi mạng",
+          "Không thể kết nối đến Server. Kiểm tra lại IP/Wifi!",
+        );
+      }
     }
   };
-  console.log(errors);
 
   return (
     <KeyboardAvoidingView
