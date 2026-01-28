@@ -22,8 +22,10 @@ import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { loginSchema } from "@/utils/validation";
 import api from "@/utils/api";
+import { useAuth } from "@/contexts/authContext";
 
 const login = () => {
+  const { setAuth } = useAuth();
   const emailInputRef = useRef(null);
   const passwordInputRef = useRef(null);
 
@@ -54,7 +56,7 @@ const login = () => {
       if (response.data.success) {
         const { token, user } = response.data.data;
         await SecureStore.setItemAsync("authToken", token);
-        console.log("Đã lưu token an toàn:", token);
+        setAuth(user);
         router.replace("/(main)/home");
       }
     } catch (error) {
@@ -134,15 +136,14 @@ const login = () => {
                 inputRef={passwordInputRef}
                 onChangeText={(value) => (passwordValue.current = value)}
                 icon={<Lock />}
-                returnKeyType="next"
-                onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
-                blurOnSubmit={false}
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
                 error={errors.password}
               />
               <View style={{ marginTop: spacingY._20, gap: spacingY._15 }}>
                 <Button loading={isLoading} onPress={handleSubmit}>
                   <Typo fontWeight={"bold"} size={18}>
-                    Sign Up
+                    Sign In
                   </Typo>
                 </Button>
 

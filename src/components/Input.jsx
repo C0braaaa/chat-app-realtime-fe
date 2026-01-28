@@ -17,6 +17,7 @@ const Input = ({
   containerStyle,
   inputStyle,
   inputRef,
+  editable = true,
   secureTextEntry,
   error,
   ...props
@@ -41,6 +42,7 @@ const Input = ({
           ref={inputRef && inputRef}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          editable={editable}
           secureTextEntry={secureTextEntry && !showPassword}
           {...props}
         />

@@ -16,7 +16,7 @@ const Welcome = () => {
       <View style={styles.container}>
         <View style={{ alignItems: "center" }}>
           <Typo color={colors.white} size={43} fontWeight={"900"}>
-            Cobra
+            CChat
           </Typo>
         </View>
         <Animated.Image
@@ -31,7 +31,7 @@ const Welcome = () => {
 
         <Button
           style={{ backgroundColor: colors.white }}
-          onPress={() => router.push("/(auth)/register")}
+          onPress={() => router.push("/(auth)/login")}
         >
           <Typo size={23} fontWeight={"bold"}>
             Get Started
