@@ -8,6 +8,11 @@ export default function MainLayout() {
         name="profileModal"
         options={{ presentation: "modal", animation: "slide_from_bottom" }}
       />
+      <Stack.Screen
+        name="newConversationModal"
+        options={{ presentation: "modal", animation: "slide_from_bottom" }}
+      />
+      <Stack.Screen name="conversation" />
     </Stack>
   );
 }

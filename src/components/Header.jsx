@@ -3,13 +3,13 @@ import React from "react";
 import Typo from "./Typo";
 import { colors } from "@/constants/theme";
 
-const Header = ({ title, leftIcon, rightIcon, style }) => {
+const Header = ({ title, leftIcon, rightIcon, style, titleStyle }) => {
   return (
     <View style={[styles.container, style]}>
       {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
 
       {title && (
-        <Typo size={22} fontWeight={"600"} style={styles.title}>
+        <Typo size={22} fontWeight={"600"} style={[styles.title, titleStyle]}>
           {title}
         </Typo>
       )}

@@ -35,6 +35,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.neutral100,
     overflow: "hidden",
-    marginTop: spacingY._25,
+    marginTop: spacingY._5,
   },
 });
