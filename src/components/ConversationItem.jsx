@@ -53,7 +53,12 @@ const ConversationItem = ({ item, router, showDivider, currentUser }) => {
         onPress={() =>
           router.push({
             pathname: "/(main)/conversation",
-            params: { conversationId: item._id },
+            params: {
+              conversationId: item._id,
+              name: name,
+              avatar: avatar,
+              type: item.type,
+            },
           })
         }
       >

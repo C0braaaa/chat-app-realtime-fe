@@ -21,7 +21,7 @@ import { useAuth } from "@/contexts/authContext";
 import Button from "@/components/Button";
 import { verticalScale } from "@/utils/styling";
 import api from "@/utils/api";
-import { Plus } from "phosphor-react-native";
+import { AntDesign } from "@expo/vector-icons";
 
 const newConversationModal = () => {
   const { isGroup } = useLocalSearchParams();
@@ -30,7 +30,7 @@ const newConversationModal = () => {
   const { user } = useAuth();
 
   const [image, setImage] = useState(
-    "https://res.cloudinary.com/dbx1xoswm/image/upload/v1769652130/Gemini_Generated_Image_f5l93pf5l93pf5l9_tr7jjd.png",
+    require("../../assets/images/defaultGroupAvatar.png"),
   );
   const [groupName, setGroupName] = useState("");
   const [selectedParticipants, setSelectedParticipants] = useState([]);
@@ -105,8 +105,82 @@ const newConversationModal = () => {
     }
   };
 
+  // upload image to cloudinary
+  const uploadToCloudinary = async (fileUri) => {
+    try {
+      const data = new FormData();
+      data.append("file", {
+        uri: fileUri,
+        type: "image/jpeg",
+        name: "avatar.jpg",
+      });
+      data.append("upload_preset", "cchat-upload");
+      data.append("cloud_name", "dbx1xoswm");
+
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/dbx1xoswm/image/upload",
+        {
+          method: "post",
+          body: data,
+        },
+      );
+
+      const fileData = await res.json();
+      return fileData.secure_url;
+    } catch (error) {
+      console.log("Upload failed:", error);
+      return null;
+    }
+  };
+
   // create group conversation
-  const createGroup = () => {};
+  const createGroup = async () => {
+    if (!groupName.trim()) {
+      Alert.alert("Error", "Group name cannot be empty");
+      return;
+    }
+    if (selectedParticipants.length < 2) {
+      Alert.alert("Error", "Group must have at least 2 participants");
+      return;
+    }
+    try {
+      setIsLoading(true);
+      let groupAvatarUrl = null;
+      if (image && typeof image === "string") {
+        groupAvatarUrl = await uploadToCloudinary(image);
+      }
+
+      const payload = {
+        name: groupName,
+        participants: [...selectedParticipants, user._id],
+        type: "group",
+        avatar: groupAvatarUrl,
+        createdBy: user._id,
+      };
+      const res = await api.post("/conversations/conversation", payload);
+
+      if (res && res.data.success) {
+        const conversationData = res.data.data;
+
+        router.replace({
+          pathname: "/(main)/conversation",
+          params: {
+            conversationId: conversationData._id,
+            name: groupName,
+            image: groupAvatarUrl || "",
+            type: "group",
+          },
+        });
+      } else {
+        Alert.alert("Error", res.data.message || "Cannot create group");
+      }
+    } catch (error) {
+      console.log("Group creation error:", error);
+      Alert.alert("Error", "Something went wrong!");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Pick image from gallery
   const onPickImage = async () => {
@@ -172,7 +246,11 @@ const newConversationModal = () => {
                 ) : (
                   <View style={styles.selectionIndicator}>
                     <TouchableOpacity onPress={() => onSelectUser(item)}>
-                      <Plus size={24} color={colors.primary} />
+                      <AntDesign
+                        name="pluscircleo"
+                        size={24}
+                        color={colors.primary}
+                      />
                     </TouchableOpacity>
                   </View>
                 )}

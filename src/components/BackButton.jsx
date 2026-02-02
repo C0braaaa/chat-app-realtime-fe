@@ -1,9 +1,9 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
 import { useRouter } from "expo-router";
-import { CaretLeft } from "phosphor-react-native";
 import { verticalScale } from "utils/styling";
 import { colors } from "constants/theme";
+import { FontAwesome5 } from "@expo/vector-icons";
 
 const BackButton = ({ style, iconSize = 26, color = colors.white }) => {
   const router = useRouter();
@@ -12,7 +12,11 @@ const BackButton = ({ style, iconSize = 26, color = colors.white }) => {
       onPress={() => router.back()}
       style={[styles.button, style]}
     >
-      <CaretLeft size={verticalScale(iconSize)} color={color} weight={"bold"} />
+      <FontAwesome5
+        name="chevron-left"
+        size={verticalScale(iconSize)}
+        color={color}
+      />
     </TouchableOpacity>
   );
 };

@@ -16,7 +16,7 @@ import Header from "@/components/Header";
 import BackButton from "@/components/BackButton";
 import Avatar from "@/components/Avatar";
 import { useAuth } from "@/contexts/authContext";
-import { Pencil, SignOutIcon } from "phosphor-react-native";
+import { FontAwesome5, Feather } from "@expo/vector-icons";
 import Typo from "@/components/Typo";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
@@ -141,7 +141,11 @@ const ProfileModal = () => {
           <View style={styles.avatarContainer}>
             <Avatar uri={image} size={170} />
             <TouchableOpacity style={styles.editIcon} onPress={onPickImage}>
-              <Pencil size={verticalScale(20)} color={colors.neutral800} />
+              <FontAwesome5
+                name="pencil-alt"
+                size={verticalScale(20)}
+                color={colors.neutral800}
+              />
             </TouchableOpacity>
           </View>
 
@@ -193,10 +197,10 @@ const ProfileModal = () => {
             }}
             onPress={handleLogout}
           >
-            <SignOutIcon
+            <Feather
+              name="log-out"
               size={verticalScale(30)}
               color={colors.white}
-              weight="bold"
             />
           </Button>
         )}

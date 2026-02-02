@@ -13,7 +13,7 @@ import { verticalScale } from "@/utils/styling";
 import { colors, radius, spacingX, spacingY } from "@/constants/theme";
 import Typo from "@/components/Typo";
 import { useAuth } from "@/contexts/authContext";
-import { GearSixIcon, PlusIcon } from "phosphor-react-native";
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import ConversationItem from "@/components/ConversationItem";
 import Loading from "@/components/Loading";
 import Button from "@/components/Button";
@@ -22,7 +22,6 @@ import api from "@/utils/api";
 const home = () => {
   const { user } = useAuth();
   const router = useRouter();
-  console.log("User hiện tại: ", user);
 
   const [currrentUser, setCurrentUser] = useState(null);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -93,9 +92,9 @@ const home = () => {
             style={styles.settingIcon}
             onPress={() => router.push("/(main)/profileModal")}
           >
-            <GearSixIcon
+            <Ionicons
+              name="settings-outline"
               size={verticalScale(22)}
-              weight="fill"
               color={colors.white}
             />
           </TouchableOpacity>
@@ -183,7 +182,7 @@ const home = () => {
           })
         }
       >
-        <PlusIcon color={colors.black} weight="bold" size={verticalScale(24)} />
+        <Ionicons name="add" color={colors.black} size={verticalScale(24)} />
       </Button>
     </ScreenWrapper>
   );

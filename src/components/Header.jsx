@@ -40,7 +40,6 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   rightIcon: {
-    alignSelf: "flex-end",
     zIndex: 30,
   },
 });

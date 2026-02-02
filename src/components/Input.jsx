@@ -10,7 +10,7 @@ import React from "react";
 import { colors, radius, spacingX, spacingY } from "constants/theme";
 import { verticalScale } from "utils/styling";
 import Typo from "./Typo";
-import { Eye, EyeSlash } from "phosphor-react-native";
+import { FontAwesome5 } from "@expo/vector-icons";
 
 const Input = ({
   icon,
@@ -50,9 +50,13 @@ const Input = ({
         {secureTextEntry && (
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             {showPassword ? (
-              <Eye size={24} color={colors.neutral400} weight="fill" />
+              <FontAwesome5 name="eye" size={20} color={colors.neutral400} />
             ) : (
-              <EyeSlash size={24} color={colors.neutral400} weight="fill" />
+              <FontAwesome5
+                name="eye-slash"
+                size={20}
+                color={colors.neutral400}
+              />
             )}
           </TouchableOpacity>
         )}

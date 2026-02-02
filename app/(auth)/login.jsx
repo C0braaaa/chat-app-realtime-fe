@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import React, { useRef, useState } from "react";
-import { EnvelopeSimpleIcon, Lock, User } from "phosphor-react-native";
+import { FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Animated, { SlideInDown } from "react-native-reanimated";
 import * as SecureStore from "expo-secure-store";
@@ -124,7 +124,13 @@ const login = () => {
                 placeholder="Enter your email"
                 inputRef={emailInputRef}
                 onChangeText={(value) => (emailValue.current = value)}
-                icon={<EnvelopeSimpleIcon />}
+                icon={
+                  <FontAwesome5
+                    name="envelope"
+                    size={20}
+                    color={colors.neutral500}
+                  />
+                }
                 returnKeyType="next"
                 onSubmitEditing={() => passwordInputRef.current?.focus()}
                 blurOnSubmit={false}
@@ -135,7 +141,13 @@ const login = () => {
                 placeholder="Enter your password"
                 inputRef={passwordInputRef}
                 onChangeText={(value) => (passwordValue.current = value)}
-                icon={<Lock />}
+                icon={
+                  <FontAwesome5
+                    name="lock"
+                    size={20}
+                    color={colors.neutral500}
+                  />
+                }
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
                 error={errors.password}

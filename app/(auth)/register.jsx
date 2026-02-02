@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import React, { useRef, useState } from "react";
-import { EnvelopeSimpleIcon, Lock, User } from "phosphor-react-native";
+import { FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Animated, { SlideInDown } from "react-native-reanimated";
 
@@ -137,7 +137,13 @@ const register = () => {
                 placeholder="Enter your name"
                 inputRef={nameInputRef}
                 onChangeText={(value) => (nameValue.current = value)}
-                icon={<User />}
+                icon={
+                  <FontAwesome5
+                    name="user"
+                    size={20}
+                    color={colors.neutral500}
+                  />
+                }
                 returnKeyType="next"
                 onSubmitEditing={() => emailInputRef.current?.focus()}
                 blurOnSubmit={false}
@@ -147,7 +153,13 @@ const register = () => {
                 placeholder="Enter your email"
                 inputRef={emailInputRef}
                 onChangeText={(value) => (emailValue.current = value)}
-                icon={<EnvelopeSimpleIcon />}
+                icon={
+                  <FontAwesome5
+                    name="envelope"
+                    size={20}
+                    color={colors.neutral500}
+                  />
+                }
                 returnKeyType="next"
                 onSubmitEditing={() => passwordInputRef.current?.focus()}
                 blurOnSubmit={false}
@@ -158,7 +170,13 @@ const register = () => {
                 placeholder="Enter your password"
                 inputRef={passwordInputRef}
                 onChangeText={(value) => (passwordValue.current = value)}
-                icon={<Lock />}
+                icon={
+                  <FontAwesome5
+                    name="lock"
+                    size={20}
+                    color={colors.neutral500}
+                  />
+                }
                 returnKeyType="next"
                 onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
                 blurOnSubmit={false}
@@ -169,7 +187,13 @@ const register = () => {
                 inputRef={confirmPasswordInputRef}
                 onChangeText={(value) => (confirmPasswordValue.current = value)}
                 placeholder="Confirm password"
-                icon={<Lock />}
+                icon={
+                  <FontAwesome5
+                    name="lock"
+                    size={20}
+                    color={colors.neutral500}
+                  />
+                }
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
                 error={errors.confirmPassword}
