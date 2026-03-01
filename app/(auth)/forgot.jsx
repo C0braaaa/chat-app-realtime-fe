@@ -5,15 +5,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import React, { useRef, useState } from "react";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Animated, { SlideInDown } from "react-native-reanimated";
-import * as SecureStore from "expo-secure-store";
 
 import ScreenWrapper from "@/components/ScreenWrapper";
 import Typo from "@/components/Typo";
@@ -21,68 +18,41 @@ import { colors, radius, spacingX, spacingY } from "@/constants/theme";
 import BackButton from "@/components/BackButton";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
-import { loginSchema } from "@/utils/validation";
 import api from "@/utils/api";
-import { useAuth } from "@/contexts/authContext";
 
-const login = () => {
-  const { setAuth } = useAuth();
+const forgotPassword = () => {
   const emailInputRef = useRef(null);
-  const passwordInputRef = useRef(null);
-
-  // 2. Tách biệt: Ref này chỉ dùng để lưu Giá trị (Text)
   const emailValue = useRef("");
-  const passwordValue = useRef("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const router = useRouter();
+
   const handleSubmit = async () => {
     setErrors({});
+    const email = emailValue.current.trim().toLowerCase();
 
-    const formData = {
-      email: emailValue.current.trim().toLowerCase(),
-      password: passwordValue.current,
-    };
+    if (!email) {
+      setErrors({ email: "Email is required" });
+      return;
+    }
 
     try {
-      loginSchema.parse(formData);
-
       setIsLoading(true);
-
-      const response = await api.post("/auth/login", formData);
-
+      const response = await api.post("/auth/forgot-password", { email });
       setIsLoading(false);
 
       if (response.data.success) {
-        const { token, user } = response.data.data;
-        await SecureStore.setItemAsync("authToken", token);
-        setAuth(user);
-        router.replace("/(main)/home");
+        Alert.alert("Success", "OTP has been sent to your email.");
+        router.push({ pathname: "/(auth)/enterotp", params: { email } });
       }
     } catch (error) {
       setIsLoading(false);
-      console.log("Login Error:", error);
+      console.log("Forgot Password Error:", error);
 
-      // 2. Lỗi backend
       if (error.response) {
-        Alert.alert("Login Failed", error.response.data.message);
-      }
-      // 3. Lỗi Zod
-      else if (error.errors || error.issues) {
-        const newErrors = {};
-        const issues = error.errors || error.issues;
-
-        issues.forEach((err) => {
-          if (!newErrors[err.path[0]]) {
-            newErrors[err.path[0]] = err.message;
-          }
-        });
-
-        setErrors(newErrors);
-      }
-      // 4. Lỗi mạng
-      else {
+        Alert.alert("Failed", error.response.data.message);
+      } else {
         Alert.alert("Error", "Cannot connect to the server.");
       }
     }
@@ -97,11 +67,6 @@ const login = () => {
         <View style={styles.container}>
           <View style={styles.header}>
             <BackButton iconSize={28} />
-            <TouchableOpacity onPress={() => router.push("/forgot")}>
-              <Typo size={17} color={colors.white}>
-                Forgot your password?
-              </Typo>
-            </TouchableOpacity>
           </View>
           <Animated.View
             entering={SlideInDown.duration(800).delay(200).damping(15)}
@@ -119,9 +84,9 @@ const login = () => {
                 }}
               >
                 <Typo size={28} fontWeight={"600"}>
-                  Welcome Back
+                  Forgot Password
                 </Typo>
-                <Typo color={colors.neutral600}>We are happy to see you!</Typo>
+                <Typo color={colors.neutral600}>Please enter your email!</Typo>
               </View>
               <Input
                 placeholder="Enter your email"
@@ -134,44 +99,27 @@ const login = () => {
                     color={colors.neutral500}
                   />
                 }
-                returnKeyType="next"
-                onSubmitEditing={() => passwordInputRef.current?.focus()}
-                blurOnSubmit={false}
-                error={errors.email}
-              />
-              <Input
-                secureTextEntry
-                placeholder="Enter your password"
-                inputRef={passwordInputRef}
-                onChangeText={(value) => (passwordValue.current = value)}
-                icon={
-                  <FontAwesome5
-                    name="lock"
-                    size={20}
-                    color={colors.neutral500}
-                  />
-                }
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
-                error={errors.password}
+                error={errors.email}
               />
               <View style={{ marginTop: spacingY._20, gap: spacingY._15 }}>
                 <Button loading={isLoading} onPress={handleSubmit}>
                   <Typo fontWeight={"bold"} size={18}>
-                    Sign In
+                    Send
                   </Typo>
                 </Button>
 
                 <View style={styles.footer}>
-                  <Typo>Don't have an account? </Typo>
-                  <Pressable onPress={() => router.push("/(auth)/register")}>
+                  <Typo>Remember your password? </Typo>
+                  <Pressable onPress={() => router.push("/(auth)/enterotp")}>
                     <Typo
                       style={{
                         color: colors.primaryDark,
                       }}
                       fontWeight={"bold"}
                     >
-                      Sign Up.
+                      Sign In.
                     </Typo>
                   </Pressable>
                 </View>
@@ -184,7 +132,7 @@ const login = () => {
   );
 };
 
-export default login;
+export default forgotPassword;
 
 const styles = StyleSheet.create({
   container: {
@@ -208,12 +156,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacingX._20,
     paddingTop: spacingY._20,
   },
-
   form: {
     gap: spacingY._10,
     marginTop: spacingY._20,
   },
-
   footer: {
     flexDirection: "row",
     justifyContent: "center",

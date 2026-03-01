@@ -32,10 +32,14 @@ const ConversationItem = ({ item, router, showDivider, currentUser }) => {
   };
 
   const getLastMessageDate = () => {
-    if (!lastMessage?.createdAt) return null;
+    const dateString =
+      lastMessage?.updatedAt ||
+      lastMessage?.created_at ||
+      lastMessage?.createdAt;
 
-    const messageDate = moment(lastMessage.createdAt);
+    if (!dateString) return null;
 
+    const messageDate = moment(dateString);
     const today = moment();
     if (messageDate.isSame(today, "day")) {
       return messageDate.format("h:mm A");

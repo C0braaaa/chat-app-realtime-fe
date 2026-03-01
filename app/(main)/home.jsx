@@ -5,8 +5,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import { io } from "socket.io-client";
 
 import ScreenWrapper from "@/components/ScreenWrapper";
 import { verticalScale } from "@/utils/styling";
@@ -19,9 +21,11 @@ import Loading from "@/components/Loading";
 import Button from "@/components/Button";
 import api from "@/utils/api";
 
+const SOCKET_URL = "http://192.168.1.12:3000";
 const home = () => {
   const { user } = useAuth();
   const router = useRouter();
+  const socketRef = useRef(null);
 
   const [currrentUser, setCurrentUser] = useState(null);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -46,6 +50,57 @@ const home = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const initSocket = async () => {
+      const token = await SecureStore.getItemAsync("authToken");
+      socketRef.current = io(SOCKET_URL, {
+        auth: { token },
+        transports: ["websocket"],
+      });
+
+      socketRef.current.on("update_last_message", (data) => {
+        setConversations((prevConversations) => {
+          // Kiểm tra xem chat này có đang hiển thị trên Home không
+          const exists = prevConversations.some(
+            (c) => c._id === data.conversationId,
+          );
+
+          if (!exists) {
+            // 👉 NẾU ĐÃ BỊ ẨN (DO XÓA): Bắt Home tự động load lại danh sách mới ngay lập tức
+            fetchConversations();
+            return prevConversations;
+          }
+
+          // 👉 NẾU ĐANG HIỆN: Cập nhật tin nhắn cuối cùng như bình thường
+          const updatedConversations = prevConversations.map((conv) => {
+            if (conv._id === data.conversationId) {
+              return {
+                ...conv,
+                lastMessage: data.lastMessage,
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            return conv;
+          });
+
+          return updatedConversations.sort((a, b) => {
+            const timeA = new Date(a.lastMessage?.createdAt || a.updatedAt);
+            const timeB = new Date(b.lastMessage?.createdAt || b.updatedAt);
+            return timeB - timeA;
+          });
+        });
+      });
+    };
+
+    initSocket();
+
+    return () => {
+      if (socketRef.current) socketRef.current.disconnect();
+    };
+  }, [user?._id]);
 
   useEffect(() => {
     fetchConversations();
@@ -88,6 +143,7 @@ const home = () => {
               </Typo>
             </Typo>
           </View>
+
           <TouchableOpacity
             style={styles.settingIcon}
             onPress={() => router.push("/(main)/profileModal")}

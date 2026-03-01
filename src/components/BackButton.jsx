@@ -11,6 +11,7 @@ const BackButton = ({ style, iconSize = 26, color = colors.white }) => {
     <TouchableOpacity
       onPress={() => router.back()}
       style={[styles.button, style]}
+      hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
     >
       <FontAwesome5
         name="chevron-left"

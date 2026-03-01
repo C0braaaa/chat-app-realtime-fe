@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import React from "react";
 import Typo from "./Typo";
-import { colors } from "@/constants/theme";
+import { colors, spacingX } from "@/constants/theme";
 
 const Header = ({ title, leftIcon, rightIcon, style, titleStyle }) => {
   return (
@@ -41,5 +41,7 @@ const styles = StyleSheet.create({
   },
   rightIcon: {
     zIndex: 30,
+    flexDirection: "row",
+    gap: spacingX._30,
   },
 });

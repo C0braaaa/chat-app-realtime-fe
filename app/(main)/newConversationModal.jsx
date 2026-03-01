@@ -22,6 +22,7 @@ import Button from "@/components/Button";
 import { verticalScale } from "@/utils/styling";
 import api from "@/utils/api";
 import { AntDesign } from "@expo/vector-icons";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const newConversationModal = () => {
   const { isGroup } = useLocalSearchParams();
@@ -33,6 +34,8 @@ const newConversationModal = () => {
     require("../../assets/images/defaultGroupAvatar.png"),
   );
   const [groupName, setGroupName] = useState("");
+  const [findedUsers, setFoundUsers] = useState("");
+  const debouncedSearch = useDebounce(findedUsers, 500);
   const [selectedParticipants, setSelectedParticipants] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState([]);
@@ -44,17 +47,20 @@ const newConversationModal = () => {
           params: {
             userId: user._id,
             fetchType: isGroupMode ? "group" : "direct",
+            search: debouncedSearch,
           },
         });
         if (res.data.success) {
           setUsers(res.data.data);
+        } else {
+          setUsers([]);
         }
       } catch (error) {
         console.log(error);
       }
     };
     if (user?._id) fetchUsers();
-  }, [user, isGroupMode]);
+  }, [user, isGroupMode, debouncedSearch]);
 
   const toggleParticipant = (user) => {
     setSelectedParticipants((prev) => {
@@ -203,7 +209,7 @@ const newConversationModal = () => {
           leftIcon={<BackButton color={colors.black} />}
           titleStyle={{ color: colors.black }}
         />
-        {isGroupMode && (
+        {isGroupMode ? (
           <View style={styles.groupInfoContainer}>
             <View style={styles.avatarContainer}>
               <TouchableOpacity onPress={onPickImage}>
@@ -215,6 +221,16 @@ const newConversationModal = () => {
                 placeholder="Group Name"
                 value={groupName}
                 onChangeText={setGroupName}
+              />
+            </View>
+          </View>
+        ) : (
+          <View style={styles.directInfoContainer}>
+            <View style={styles.groupNameContainer}>
+              <Input
+                placeholder="Find User"
+                value={findedUsers}
+                onChangeText={setFoundUsers}
               />
             </View>
           </View>
@@ -286,6 +302,10 @@ const styles = StyleSheet.create({
   groupInfoContainer: {
     alignItems: "center",
     marginTop: spacingY._10,
+  },
+  directInfoContainer: {
+    alignItems: "center",
+    marginTop: spacingY._30,
   },
   avatarContainer: {
     marginBottom: spacingY._10,

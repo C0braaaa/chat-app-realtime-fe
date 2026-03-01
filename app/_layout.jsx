@@ -1,27 +1,34 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
+import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider, useAuth } from "@/contexts/authContext";
 
-// 2. Tạo component con để xử lý Logic điều hướng
+SplashScreen.preventAutoHideAsync();
+
 const MainLayout = () => {
-  const { isAuthenticated } = useAuth(); // Lấy trạng thái từ Context
+  const { isAuthenticated } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    // Nếu isAuthenticated là undefined nghĩa là đang check token, chưa làm gì cả
+    // Đang chờ lấy Token thì chưa làm gì cả
     if (typeof isAuthenticated === "undefined") return;
 
+    // Kiểm tra xem đang ở khu vực nào
+    const inMainGroup = segments[0] === "(main)";
     const inAuthGroup = segments[0] === "(auth)";
 
-    if (isAuthenticated && inAuthGroup) {
-      // 👉 Nếu ĐÃ login mà người dùng đang ở màn Login/Register -> Đá sang Home
+    if (isAuthenticated && !inMainGroup) {
+      // 1. Nếu ĐÃ LOGIN mà chưa ở trong (main) -> Đá thẳng vào Home
       router.replace("/(main)/home");
     } else if (isAuthenticated === false && !inAuthGroup) {
-      // 👉 Nếu CHƯA login mà người dùng đòi vào Home -> Đá về Login
+      // 2. Nếu CHƯA LOGIN mà đang lảng vảng ở ngoài -> Đá về Welcome
       router.replace("/(auth)/welcome");
     }
-  }, [isAuthenticated]); // Chạy lại mỗi khi trạng thái đăng nhập thay đổi
+
+    // 3. Ẩn Splash ngay sau khi logic điều hướng chạy xong
+    SplashScreen.hideAsync();
+  }, [isAuthenticated, segments]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -31,7 +38,6 @@ const MainLayout = () => {
   );
 };
 
-// 3. RootLayout chính: Chỉ làm nhiệm vụ bọc AuthProvider ra ngoài cùng
 export default function RootLayout() {
   return (
     <AuthProvider>

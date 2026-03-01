@@ -41,7 +41,7 @@ const register = () => {
     setErrors({});
     const formData = {
       name: nameValue.current,
-      email: emailValue.current,
+      email: emailValue.current.trim().toLowerCase(),
       password: passwordValue.current,
       confirmPassword: confirmPasswordValue.current,
     };
