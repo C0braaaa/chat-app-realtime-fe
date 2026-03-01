@@ -31,7 +31,7 @@ import Input from "@/components/Input";
 import api from "@/utils/api";
 import { useAuth } from "@/contexts/authContext";
 
-const SOCKET_URL = "http://192.168.1.12:3000";
+const SOCKET_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 const conversation = () => {
   const { conversationId, name, avatar, type } = useLocalSearchParams();
@@ -50,29 +50,47 @@ const conversation = () => {
   // delete conversation
   const handleDeleteConversation = () => {
     setShowHeaderMenu(false);
-    Alert.alert(
-      "Delete Conversation",
-      "Are you sure you want to delete this conversation? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const res = await api.delete(`/conversations/${conversationId}`, {
+
+    // Xác định tiêu đề và nội dung cảnh báo dựa trên loại hội thoại
+    const isGroup = type === "group";
+    const alertTitle = isGroup ? "Delete Group" : "Delete Conversation";
+    const alertMessage = isGroup
+      ? "Are you sure? This will permanently delete the group and all messages for everyone. Only the owner can perform this action."
+      : "Are you sure you want to hide this conversation?";
+
+    Alert.alert(alertTitle, alertMessage, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            let res;
+            if (isGroup) {
+              // Gọi API xóa cứng dành riêng cho nhóm
+              res = await api.delete(`/conversations/group/${conversationId}`, {
                 data: { userId: user._id },
               });
-              if (res.data.success) {
-                router.replace("/(main)/home");
-              }
-            } catch (error) {
-              Alert.alert("Error", "Could not delete conversation.");
+            } else {
+              // Gọi API xóa mềm cho chat 1-1 (đã làm trước đó)
+              res = await api.delete(`/conversations/${conversationId}`, {
+                data: { userId: user._id },
+              });
             }
-          },
+
+            if (res.data.success) {
+              Alert.alert("Success", res.data.message);
+              router.replace("/(main)/home");
+            }
+          } catch (error) {
+            // Hiển thị lỗi từ Backend (ví dụ: "You do not have permission...")
+            const errorMsg =
+              error.response?.data?.message || "Could not delete.";
+            Alert.alert("Permission Denied", errorMsg);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const uploadToCloudinary = async (fileUri) => {

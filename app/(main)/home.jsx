@@ -21,7 +21,7 @@ import Loading from "@/components/Loading";
 import Button from "@/components/Button";
 import api from "@/utils/api";
 
-const SOCKET_URL = "http://192.168.1.12:3000";
+const SOCKET_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const home = () => {
   const { user } = useAuth();
   const router = useRouter();
