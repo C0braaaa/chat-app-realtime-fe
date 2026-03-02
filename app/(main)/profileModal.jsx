@@ -72,7 +72,7 @@ const ProfileModal = () => {
   // Handle submit
   const onSubmit = async () => {
     if (!username.trim()) {
-      Alert.alert("Error", "Name cannot be empty");
+      Alert.alert("Lỗi", "Tên không được để trống");
       return;
     }
 
@@ -84,7 +84,7 @@ const ProfileModal = () => {
         if (uploadedUrl) {
           avatarUrl = uploadedUrl;
         } else {
-          Alert.alert("Error", "Failed to upload image");
+          Alert.alert("Lỗi", "Tải ảnh thất bại");
           setLoading(false);
           return;
         }
@@ -101,25 +101,25 @@ const ProfileModal = () => {
       setLoading(false);
       if (response.data.success) {
         await setAuth(response.data.data);
-        Alert.alert("Success", "Profile updated successfully");
+        Alert.alert("Thành công", "Cập nhật hồ sơ thành công");
       }
     } catch (error) {
       setLoading(false);
       console.log("Update error: ", error);
-      Alert.alert("Error", "Failed to update profile");
+      Alert.alert("Lỗi", "Cập nhật hồ sơ thất bại");
     }
   };
 
   // handle logout
   const handleLogout = () => {
-    Alert.alert("Confirm", "Are you sure you want to logout?", [
+    Alert.alert("Xác nhận", "Bạn có chắc muốn đăng xuất không?", [
       {
-        text: "Cancel",
+        text: "Hủy",
         onPress: () => {},
         style: "cancel",
       },
       {
-        text: "Logout",
+        text: "Đăng xuất",
         onPress: () => logout(),
         style: "destructive",
       },
@@ -129,7 +129,7 @@ const ProfileModal = () => {
     <ScreenWrapper isModal={true} showPattern={true}>
       <View style={styles.conatiner}>
         <Header
-          title={"Update Profile"}
+          title={"Cập nhật hồ sơ"}
           leftIcon={
             Platform.OS === "android" && <BackButton color={colors.white} />
           }
@@ -172,7 +172,7 @@ const ProfileModal = () => {
                 style={{ paddingLeft: spacingX._10, color: colors.white }}
                 fontWeight={"bold"}
               >
-                Name
+                Tên
               </Typo>
               <Input
                 value={username}
@@ -206,7 +206,7 @@ const ProfileModal = () => {
         )}
         <Button style={{ flex: 1 }} onPress={onSubmit} loading={loading}>
           <Typo color={colors.black} fontWeight={"700"}>
-            Update
+            Cập nhật
           </Typo>
         </Button>
       </View>

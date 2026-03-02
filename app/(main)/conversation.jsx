@@ -53,15 +53,15 @@ const conversation = () => {
 
     // Xác định tiêu đề và nội dung cảnh báo dựa trên loại hội thoại
     const isGroup = type === "group";
-    const alertTitle = isGroup ? "Delete Group" : "Delete Conversation";
+    const alertTitle = isGroup ? "Xóa nhóm" : "Xóa cuộc trò chuyện";
     const alertMessage = isGroup
-      ? "Are you sure? This will permanently delete the group and all messages for everyone. Only the owner can perform this action."
-      : "Are you sure you want to hide this conversation?";
+      ? "Bạn có chắc không? Hành động này sẽ xóa vĩnh viễn nhóm và tất cả tin nhắn của mọi người. Chỉ chủ nhóm mới làm được."
+      : "Bạn có chắc muốn ẩn cuộc trò chuyện này?";
 
     Alert.alert(alertTitle, alertMessage, [
-      { text: "Cancel", style: "cancel" },
+      { text: "Hủy", style: "cancel" },
       {
-        text: "Delete",
+        text: "Xóa",
         style: "destructive",
         onPress: async () => {
           try {
@@ -79,14 +79,14 @@ const conversation = () => {
             }
 
             if (res.data.success) {
-              Alert.alert("Success", res.data.message);
+              Alert.alert("Thành công", res.data.message);
               router.replace("/(main)/home");
             }
           } catch (error) {
             // Hiển thị lỗi từ Backend (ví dụ: "You do not have permission...")
             const errorMsg =
               error.response?.data?.message || "Could not delete.";
-            Alert.alert("Permission Denied", errorMsg);
+            Alert.alert("Từ chối quyền", errorMsg);
           }
         },
       },
@@ -115,7 +115,7 @@ const conversation = () => {
       const fileData = await res.json();
       return fileData.secure_url;
     } catch (error) {
-      console.log("Upload failed:", error);
+      console.log("Tải lên thất bại:", error);
       return null;
     }
   };
@@ -147,7 +147,7 @@ const conversation = () => {
           err.message === "Invalid token" ||
           err.message === "Authentication error"
         ) {
-          Alert.alert("Session Expired", "Please login again");
+          Alert.alert("Phiên hết hạn", "Vui lòng đăng nhập lại");
           SecureStore.deleteItemAsync("authToken");
           router.replace("/(auth)/login");
         }
@@ -233,7 +233,7 @@ const conversation = () => {
 
         if (!res.data.success) throw new Error("Edit failed");
       } catch (error) {
-        Alert.alert("Error", "Failed to update message");
+        Alert.alert("Lỗi", "Cập nhật tin nhắn thất bại");
       }
       return;
     }
@@ -293,7 +293,7 @@ const conversation = () => {
         });
       }
     } catch (error) {
-      Alert.alert("Error", "Message not sent");
+      Alert.alert("Lỗi", "Tin nhắn không gửi được");
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
     }
   };
@@ -365,7 +365,7 @@ const conversation = () => {
                       color={colors.primary}
                     />
                     <Typo size={16} color={colors.white} fontWeight={"500"}>
-                      Delete Chat
+                      Xóa trò chuyện
                     </Typo>
                   </TouchableOpacity>
                 </View>
@@ -406,7 +406,7 @@ const conversation = () => {
                 paddingRight: scale(65),
                 borderWidth: 0,
               }}
-              placeholder="Type a message"
+              placeholder="Nhập tin nhắn"
               onSubmitEditing={handleSendMessage}
               icon={
                 <TouchableOpacity style={styles.inputIcon} onPress={onPickFile}>

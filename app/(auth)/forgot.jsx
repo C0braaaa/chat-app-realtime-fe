@@ -43,17 +43,17 @@ const forgotPassword = () => {
       setIsLoading(false);
 
       if (response.data.success) {
-        Alert.alert("Success", "OTP has been sent to your email.");
+        Alert.alert("Thành công", "OTP đã gửi đến email của bạn.");
         router.push({ pathname: "/(auth)/enterotp", params: { email } });
       }
     } catch (error) {
       setIsLoading(false);
-      console.log("Forgot Password Error:", error);
+      console.log("Lỗi quên mật khẩu:", error);
 
       if (error.response) {
-        Alert.alert("Failed", error.response.data.message);
+        Alert.alert("Thất bại", error.response.data.message);
       } else {
-        Alert.alert("Error", "Cannot connect to the server.");
+        Alert.alert("Lỗi", "Không thể kết nối đến máy chủ.");
       }
     }
   };
@@ -84,12 +84,12 @@ const forgotPassword = () => {
                 }}
               >
                 <Typo size={28} fontWeight={"600"}>
-                  Forgot Password
+                  Quên mật khẩu
                 </Typo>
-                <Typo color={colors.neutral600}>Please enter your email!</Typo>
+                <Typo color={colors.neutral600}>Vui lòng nhập email!</Typo>
               </View>
               <Input
-                placeholder="Enter your email"
+                placeholder="Nhập email của bạn"
                 inputRef={emailInputRef}
                 onChangeText={(value) => (emailValue.current = value)}
                 icon={
@@ -106,20 +106,20 @@ const forgotPassword = () => {
               <View style={{ marginTop: spacingY._20, gap: spacingY._15 }}>
                 <Button loading={isLoading} onPress={handleSubmit}>
                   <Typo fontWeight={"bold"} size={18}>
-                    Send
+                    Gửi
                   </Typo>
                 </Button>
 
                 <View style={styles.footer}>
-                  <Typo>Remember your password? </Typo>
-                  <Pressable onPress={() => router.push("/(auth)/enterotp")}>
+                  <Typo>Nhớ mật khẩu? </Typo>
+                  <Pressable onPress={() => router.push("/(auth)/login")}>
                     <Typo
                       style={{
                         color: colors.primaryDark,
                       }}
                       fontWeight={"bold"}
                     >
-                      Sign In.
+                      Đăng nhập.
                     </Typo>
                   </Pressable>
                 </View>

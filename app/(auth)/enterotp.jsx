@@ -35,7 +35,7 @@ const enterotp = () => {
     const otp = otpValue.current.trim();
 
     if (!otp) {
-      setErrors({ otp: "OTP is required" });
+      setErrors({ otp: "OTP là bắt buộc" });
       return;
     }
 
@@ -54,8 +54,8 @@ const enterotp = () => {
       }
     } catch (error) {
       setIsLoading(false);
-      if (error.response) Alert.alert("Failed", error.response.data.message);
-      else Alert.alert("Error", "Cannot connect to the server.");
+      if (error.response) Alert.alert("Thất bại", error.response.data.message);
+      else Alert.alert("Lỗi", "Không thể kết nối đến máy chủ.");
     }
   };
 
@@ -85,14 +85,14 @@ const enterotp = () => {
                 }}
               >
                 <Typo size={28} fontWeight={"600"}>
-                  Enter OTP
+                  Nhập OTP
                 </Typo>
                 <Typo color={colors.neutral600}>
-                  Please enter your 6-digit OTP code!
+                  Nhập mã OTP 6 chữ số của bạn!
                 </Typo>
               </View>
               <Input
-                placeholder="Enter your OTP"
+                placeholder="Nhập OTP của bạn"
                 inputRef={otpInputRef}
                 onChangeText={(value) => (otpValue.current = value)}
                 keyboardType="numeric" // 👈 Bàn phím số
@@ -111,7 +111,7 @@ const enterotp = () => {
               <View style={{ marginTop: spacingY._20, gap: spacingY._15 }}>
                 <Button loading={isLoading} onPress={handleSubmit}>
                   <Typo fontWeight={"bold"} size={18}>
-                    Verify
+                    Xác nhận
                   </Typo>
                 </Button>
               </View>

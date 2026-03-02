@@ -38,11 +38,11 @@ const recoverpassword = () => {
     const confirmPassword = confirmPasswordValue.current.trim();
 
     if (!newPassword || newPassword.length < 6) {
-      setErrors({ password: "Password must be at least 6 characters" });
+      setErrors({ password: "Mật khẩu phải ít nhất 6 ký tự" });
       return;
     }
     if (newPassword !== confirmPassword) {
-      setErrors({ confirmPassword: "Passwords do not match" });
+      setErrors({ confirmPassword: "Mật khẩu không khớp" });
       return;
     }
 
@@ -57,8 +57,8 @@ const recoverpassword = () => {
 
       if (response.data.success) {
         Alert.alert(
-          "Success",
-          "Password reset successful! Please login again.",
+          "Thành công",
+          "Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.",
         );
         // Đá thẳng về màn Login, không cho lùi lại màn OTP nữa
         router.dismissAll();
@@ -66,8 +66,8 @@ const recoverpassword = () => {
       }
     } catch (error) {
       setIsLoading(false);
-      if (error.response) Alert.alert("Failed", error.response.data.message);
-      else Alert.alert("Error", "Cannot connect to the server.");
+      if (error.response) Alert.alert("Thất bại", error.response.data.message);
+      else Alert.alert("Lỗi", "Không thể kết nối đến máy chủ.");
     }
   };
 
@@ -97,15 +97,15 @@ const recoverpassword = () => {
                 }}
               >
                 <Typo size={28} fontWeight={"600"}>
-                  New Password
+                  Mật khẩu mới
                 </Typo>
                 <Typo color={colors.neutral600}>
-                  Enter your new password below
+                  Nhập mật khẩu mới của bạn bên dưới
                 </Typo>
               </View>
 
               <Input
-                placeholder="Enter your new password"
+                placeholder="Nhập mật khẩu mới của bạn"
                 inputRef={passwordInputRef}
                 onChangeText={(value) => (passwordValue.current = value)}
                 secureTextEntry // 👈 Ẩn ký tự mật khẩu
@@ -122,7 +122,7 @@ const recoverpassword = () => {
               />
 
               <Input
-                placeholder="Confirm your new password"
+                placeholder="Xác nhận mật khẩu mới của bạn"
                 inputRef={confirmPasswordInputRef}
                 onChangeText={(value) => (confirmPasswordValue.current = value)}
                 secureTextEntry // 👈 Ẩn ký tự mật khẩu
@@ -141,7 +141,7 @@ const recoverpassword = () => {
               <View style={{ marginTop: spacingY._20, gap: spacingY._15 }}>
                 <Button loading={isLoading} onPress={handleSubmit}>
                   <Typo fontWeight={"bold"} size={18}>
-                    Update Password
+                    Cập nhật mật khẩu
                   </Typo>
                 </Button>
               </View>

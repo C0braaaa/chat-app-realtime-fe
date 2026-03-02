@@ -3,41 +3,41 @@ import { z } from "zod";
 export const registerSchema = z
   .object({
     name: z
-      .string({ required_error: "Name is required" })
-      .trim() // Xóa khoảng trắng thừa 2 đầu
-      .min(1, "Name is required")
-      .min(6, "Name must be at least 6 characters") // Kiểm tra độ dài trước
-      .max(50, "Name must be at most 50 characters"),
+      .string({ required_error: "Tên là bắt buộc" })
+      .trim()
+      .min(1, "Tên là bắt buộc")
+      .min(6, "Tên phải có ít nhất 6 ký tự")
+      .max(50, "Tên tối đa 50 ký tự"),
 
     email: z
-      .string({ required_error: "Email is required" })
+      .string({ required_error: "Email là bắt buộc" })
       .trim()
-      .min(1, "Email is required")
-      .email("Invalid email address"),
+      .min(1, "Email là bắt buộc")
+      .email("Địa chỉ email không hợp lệ"),
 
     password: z
-      .string({ required_error: "Password is required" })
-      .min(1, "Password is required") // Quan trọng: Để cuối để ưu tiên hiển thị
-      .min(6, "Password must be at least 6 characters"),
+      .string({ required_error: "Mật khẩu là bắt buộc" })
+      .min(1, "Mật khẩu là bắt buộc")
+      .min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
 
     confirmPassword: z
-      .string({ required_error: "Confirm password is required" })
-      .min(1, "Confirm password is required"),
+      .string({ required_error: "Xác nhận mật khẩu là bắt buộc" })
+      .min(1, "Xác nhận mật khẩu là bắt buộc"),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: "Mật khẩu xác nhận không khớp",
     path: ["confirmPassword"],
   });
 
 export const loginSchema = z.object({
   email: z
-    .string({ required_error: "Email is required" })
+    .string({ required_error: "Email là bắt buộc" })
     .trim()
-    .min(1, "Email is required")
-    .email("Invalid email address"),
+    .min(1, "Email là bắt buộc")
+    .email("Địa chỉ email không hợp lệ"),
 
   password: z
-    .string({ required_error: "Password is required" })
-    .min(1, "Password is required") // Quan trọng: Để cuối để ưu tiên hiển thị
-    .min(6, "Password must be at least 6 characters"),
+    .string({ required_error: "Mật khẩu là bắt buộc" })
+    .min(1, "Mật khẩu là bắt buộc")
+    .min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
 });

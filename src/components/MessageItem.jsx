@@ -26,6 +26,13 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
   const isLocal = item.isLocal;
   const [showMenu, setShowMenu] = useState(false);
 
+  const BOT_ID = process.env.EXPO_PUBLIC_BOT_USER_ID;
+
+  const senderIdStr =
+    typeof item.sender === "object" ? item.sender?._id : item.sender;
+  const isBotMessage = senderIdStr === BOT_ID;
+  const shouldShowAvatarAndName = !isMe;
+
   const handleDelete = async () => {
     setShowMenu(false);
     try {
@@ -60,10 +67,10 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
         isLocal && { opacity: 0.7 },
       ]}
     >
-      {!isMe && !isDirect && (
+      {shouldShowAvatarAndName && (
         <Avatar
           size={35}
-          uri={item.sender.avatar}
+          uri={item.sender?.avatar}
           style={styles.messageAvatar}
         />
       )}
@@ -77,9 +84,9 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
             isMe ? styles.myBuddle : styles.theirBudde,
           ]}
         >
-          {!isMe && !isDirect && (
+          {shouldShowAvatarAndName && (
             <Typo color={colors.neutral900} fontWeight={"600"} size={13}>
-              {item.sender.name}
+              {item.sender?.name}
             </Typo>
           )}
 

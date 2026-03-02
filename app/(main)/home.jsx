@@ -4,11 +4,15 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { io } from "socket.io-client";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import Constants from "expo-constants";
 
 import ScreenWrapper from "@/components/ScreenWrapper";
 import { verticalScale } from "@/utils/styling";
@@ -32,6 +36,76 @@ const home = () => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // notification
+  useEffect(() => {
+    if (user?._id) {
+      registerForPushNotificationsAsync(user._id);
+    }
+  }, [user]);
+  async function registerForPushNotificationsAsync(userId) {
+    if (!Device.isDevice) {
+      return;
+    }
+
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== "granted") {
+      return;
+    }
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF231F7C",
+      });
+    }
+
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ||
+      Constants.easConfig?.projectId;
+
+    if (!projectId) {
+      return;
+    }
+
+    try {
+      const tokenResponse = await Notifications.getExpoPushTokenAsync({
+        projectId: projectId,
+      });
+      const token = tokenResponse.data;
+
+      const deviceType = Platform.OS === "android" ? "android" : "ios";
+
+      await api.post("/users/push-token", {
+        userId,
+        token,
+        deviceType,
+      });
+    } catch {
+      // silent fail
+    }
+  }
+
+  // Setup notification listeners (when notification arrives)
+  useEffect(() => {
+    const notificationListener = Notifications.addNotificationReceivedListener(
+      () => {},
+    );
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener);
+    };
+  }, []);
+
   // fetch conversations from backend
   const fetchConversations = async () => {
     try {
@@ -45,7 +119,7 @@ const home = () => {
         setConversations(res.data.data);
       }
     } catch (error) {
-      console.log("Error: ", error);
+      console.log("Lỗi: ", error);
     } finally {
       setLoading(false);
     }
@@ -137,7 +211,7 @@ const home = () => {
               color={colors.neutral200}
               textProps={{ numberOfList: 1 }}
             >
-              Hello,{" "}
+              Xin chào,{" "}
               <Typo size={20} color={colors.white} fontWeight={"800"}>
                 {user?.name}
               </Typo>
@@ -170,7 +244,7 @@ const home = () => {
                     selectedTab === 0 && styles.activeTabStyle,
                   ]}
                 >
-                  <Typo>Direct Messages</Typo>
+                  <Typo>Chat</Typo>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.tabStyle}
@@ -180,7 +254,7 @@ const home = () => {
                     selectedTab === 1 && styles.activeTabStyle,
                   ]}
                 >
-                  <Typo>Groups</Typo>
+                  <Typo>Nhóm</Typo>
                 </TouchableOpacity>
               </View>
             </View>
@@ -215,14 +289,14 @@ const home = () => {
               selectedTab === 0 &&
               directConversations.length === 0 && (
                 <Typo style={{ textAlign: "center" }}>
-                  You don't have any messages
+                  Bạn chưa có tin nhắn nào
                 </Typo>
               )}
             {!loading &&
               selectedTab === 1 &&
               groupConversations.length === 0 && (
                 <Typo style={{ textAlign: "center" }}>
-                  You haven't joined any groups yet
+                  Bạn chưa tham gia nhóm nào
                 </Typo>
               )}
             {loading && <Loading />}

@@ -62,11 +62,11 @@ const login = () => {
       }
     } catch (error) {
       setIsLoading(false);
-      console.log("Login Error:", error);
+      console.log("Lỗi đăng nhập:", error);
 
       // 2. Lỗi backend
       if (error.response) {
-        Alert.alert("Login Failed", error.response.data.message);
+        Alert.alert("Đăng nhập thất bại", error.response.data.message);
       }
       // 3. Lỗi Zod
       else if (error.errors || error.issues) {
@@ -83,7 +83,7 @@ const login = () => {
       }
       // 4. Lỗi mạng
       else {
-        Alert.alert("Error", "Cannot connect to the server.");
+        Alert.alert("Lỗi", "Không thể kết nối đến máy chủ.");
       }
     }
   };
@@ -99,7 +99,7 @@ const login = () => {
             <BackButton iconSize={28} />
             <TouchableOpacity onPress={() => router.push("/forgot")}>
               <Typo size={17} color={colors.white}>
-                Forgot your password?
+                Quên mật khẩu?
               </Typo>
             </TouchableOpacity>
           </View>
@@ -119,12 +119,12 @@ const login = () => {
                 }}
               >
                 <Typo size={28} fontWeight={"600"}>
-                  Welcome Back
+                  Chào mừng trở lại
                 </Typo>
-                <Typo color={colors.neutral600}>We are happy to see you!</Typo>
+                <Typo color={colors.neutral600}>Rất vui được gặp bạn!</Typo>
               </View>
               <Input
-                placeholder="Enter your email"
+                placeholder="Nhập email của bạn"
                 inputRef={emailInputRef}
                 onChangeText={(value) => (emailValue.current = value)}
                 icon={
@@ -141,7 +141,7 @@ const login = () => {
               />
               <Input
                 secureTextEntry
-                placeholder="Enter your password"
+                placeholder="Nhập mật khẩu của bạn"
                 inputRef={passwordInputRef}
                 onChangeText={(value) => (passwordValue.current = value)}
                 icon={
@@ -158,12 +158,12 @@ const login = () => {
               <View style={{ marginTop: spacingY._20, gap: spacingY._15 }}>
                 <Button loading={isLoading} onPress={handleSubmit}>
                   <Typo fontWeight={"bold"} size={18}>
-                    Sign In
+                    Đăng nhập
                   </Typo>
                 </Button>
 
                 <View style={styles.footer}>
-                  <Typo>Don't have an account? </Typo>
+                  <Typo>Chưa có tài khoản? </Typo>
                   <Pressable onPress={() => router.push("/(auth)/register")}>
                     <Typo
                       style={{
@@ -171,7 +171,7 @@ const login = () => {
                       }}
                       fontWeight={"bold"}
                     >
-                      Sign Up.
+                      Đăng ký.
                     </Typo>
                   </Pressable>
                 </View>

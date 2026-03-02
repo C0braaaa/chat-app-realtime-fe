@@ -108,7 +108,7 @@ const register = () => {
           <View style={styles.header}>
             <BackButton iconSize={28} />
             <Typo size={17} color={colors.white}>
-              Need some help?
+              Cần trợ giúp?
             </Typo>
           </View>
           <Animated.View
@@ -127,14 +127,14 @@ const register = () => {
                 }}
               >
                 <Typo size={28} fontWeight={"600"}>
-                  Create Your Account
+                  Tạo tài khoản
                 </Typo>
                 <Typo color={colors.neutral600}>
-                  Create an account to continue!
+                  Tạo tài khoản để tiếp tục!
                 </Typo>
               </View>
               <Input
-                placeholder="Enter your name"
+                placeholder="Nhập tên của bạn"
                 inputRef={nameInputRef}
                 onChangeText={(value) => (nameValue.current = value)}
                 icon={
@@ -150,7 +150,7 @@ const register = () => {
                 error={errors.name}
               />
               <Input
-                placeholder="Enter your email"
+                placeholder="Nhập email của bạn"
                 inputRef={emailInputRef}
                 onChangeText={(value) => (emailValue.current = value)}
                 icon={
@@ -167,7 +167,7 @@ const register = () => {
               />
               <Input
                 secureTextEntry
-                placeholder="Enter your password"
+                placeholder="Nhập mật khẩu của bạn"
                 inputRef={passwordInputRef}
                 onChangeText={(value) => (passwordValue.current = value)}
                 icon={
@@ -186,7 +186,7 @@ const register = () => {
                 secureTextEntry
                 inputRef={confirmPasswordInputRef}
                 onChangeText={(value) => (confirmPasswordValue.current = value)}
-                placeholder="Confirm password"
+                placeholder="Xác nhận mật khẩu"
                 icon={
                   <FontAwesome5
                     name="lock"
@@ -201,12 +201,12 @@ const register = () => {
               <View style={{ marginTop: spacingY._20, gap: spacingY._15 }}>
                 <Button loading={isLoading} onPress={handleSubmit}>
                   <Typo fontWeight={"bold"} size={18}>
-                    Sign Up
+                    Đăng ký
                   </Typo>
                 </Button>
 
                 <View style={styles.footer}>
-                  <Typo>Already have an account? </Typo>
+                  <Typo>Đã có tài khoản? </Typo>
                   <Pressable onPress={() => router.push("/(auth)/login")}>
                     <Typo
                       style={{
@@ -214,7 +214,7 @@ const register = () => {
                       }}
                       fontWeight={"bold"}
                     >
-                      Sign In.
+                      Đăng nhập.
                     </Typo>
                   </Pressable>
                 </View>

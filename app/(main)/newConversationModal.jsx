@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect, use } from "react";
 import { colors, radius, spacingX, spacingY } from "@/constants/theme";
@@ -31,7 +32,7 @@ const newConversationModal = () => {
   const { user } = useAuth();
 
   const [image, setImage] = useState(
-    require("../../assets/images/defaultGroupAvatar.png"),
+    require("../../assets/images/default_group_avatar.png"),
   );
   const [groupName, setGroupName] = useState("");
   const [findedUsers, setFoundUsers] = useState("");
@@ -39,10 +40,12 @@ const newConversationModal = () => {
   const [selectedParticipants, setSelectedParticipants] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState([]);
+  const [isFetchingUsers, setIsFetchingUsers] = useState(true);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        setIsFetchingUsers(true);
         const res = await api.get("/users/user", {
           params: {
             userId: user._id,
@@ -57,6 +60,8 @@ const newConversationModal = () => {
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        setIsFetchingUsers(false);
       }
     };
     if (user?._id) fetchUsers();
@@ -81,8 +86,7 @@ const newConversationModal = () => {
         setIsLoading(true);
 
         if (!targetUser._id || !user._id) {
-          Alert.alert("Error", "User information is missing");
-          return;
+          Alert.alert("Lỗi", "Thiếu thông tin người dùng");
         }
 
         const res = await api.post("/conversations/conversation", {
@@ -94,16 +98,16 @@ const newConversationModal = () => {
           router.back();
         } else {
           Alert.alert(
-            "Error",
-            res.data.message || "Cannot create conversation.",
+            "Lỗi",
+            res.data.message || "Không thể tạo cuộc trò chuyện.",
           );
         }
       } catch (error) {
-        console.log("Error:", error.response?.data || error.message);
+        console.log("Lỗi:", error.response?.data || error.message);
         Alert.alert(
-          "Error",
+          "Lỗi",
           error.response?.data?.message ||
-            "Cannot create conversation. Please try again.",
+            "Không thể tạo cuộc trò chuyện. Vui lòng thử lại.",
         );
       } finally {
         setIsLoading(false);
@@ -142,11 +146,11 @@ const newConversationModal = () => {
   // create group conversation
   const createGroup = async () => {
     if (!groupName.trim()) {
-      Alert.alert("Error", "Group name cannot be empty");
+      Alert.alert("Lỗi", "Tên nhóm không được để trống");
       return;
     }
     if (selectedParticipants.length < 2) {
-      Alert.alert("Error", "Group must have at least 2 participants");
+      Alert.alert("Lỗi", "Nhóm phải có ít nhất 2 thành viên");
       return;
     }
     try {
@@ -178,11 +182,11 @@ const newConversationModal = () => {
           },
         });
       } else {
-        Alert.alert("Error", res.data.message || "Cannot create group");
+        Alert.alert("Lỗi", res.data.message || "Không thể tạo nhóm");
       }
     } catch (error) {
-      console.log("Group creation error:", error);
-      Alert.alert("Error", "Something went wrong!");
+      console.log("Lỗi tạo nhóm:", error);
+      Alert.alert("Lỗi", "Đã có lỗi xảy ra!");
     } finally {
       setIsLoading(false);
     }
@@ -205,7 +209,7 @@ const newConversationModal = () => {
     <ScreenWrapper isModal={true}>
       <View style={styles.container}>
         <Header
-          title={isGroupMode ? "New Group" : "Select User"}
+          title={isGroupMode ? "Nhóm mới" : "Chọn người trò chuyện"}
           leftIcon={<BackButton color={colors.black} />}
           titleStyle={{ color: colors.black }}
         />
@@ -218,7 +222,7 @@ const newConversationModal = () => {
             </View>
             <View style={styles.groupNameContainer}>
               <Input
-                placeholder="Group Name"
+                placeholder="Tên nhóm"
                 value={groupName}
                 onChangeText={setGroupName}
               />
@@ -228,7 +232,7 @@ const newConversationModal = () => {
           <View style={styles.directInfoContainer}>
             <View style={styles.groupNameContainer}>
               <Input
-                placeholder="Find User"
+                placeholder="Tìm người bạn muốn trò chuyện..."
                 value={findedUsers}
                 onChangeText={setFoundUsers}
               />
@@ -240,39 +244,47 @@ const newConversationModal = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contactList}
         >
-          {users?.map((item, index) => {
-            const isSelected = selectedParticipants.includes(item._id);
-            return (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.contactRow,
-                  isSelected && styles.selectedContact,
-                ]}
-                onPress={() => onSelectUser(item)}
-              >
-                <Avatar uri={item.avatar} size={45} />
-                <Typo fontWeight={"500"}>{item.name}</Typo>
-                {isGroupMode ? (
-                  <View style={styles.selectionIndicator}>
-                    <View
-                      style={[styles.checkbox, isSelected && styles.checked]}
-                    ></View>
-                  </View>
-                ) : (
-                  <View style={styles.selectionIndicator}>
-                    <TouchableOpacity onPress={() => onSelectUser(item)}>
-                      <AntDesign
-                        name="pluscircleo"
-                        size={24}
-                        color={colors.primary}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+          {isFetchingUsers ? (
+            <ActivityIndicator
+              size="large"
+              color={colors.primary}
+              style={{ marginTop: verticalScale(50) }}
+            />
+          ) : (
+            users?.map((item, index) => {
+              const isSelected = selectedParticipants.includes(item._id);
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.contactRow,
+                    isSelected && styles.selectedContact,
+                  ]}
+                  onPress={() => onSelectUser(item)}
+                >
+                  <Avatar uri={item.avatar} size={45} />
+                  <Typo fontWeight={"500"}>{item.name}</Typo>
+                  {isGroupMode ? (
+                    <View style={styles.selectionIndicator}>
+                      <View
+                        style={[styles.checkbox, isSelected && styles.checked]}
+                      ></View>
+                    </View>
+                  ) : (
+                    <View style={styles.selectionIndicator}>
+                      <TouchableOpacity onPress={() => onSelectUser(item)}>
+                        <AntDesign
+                          name="pluscircleo"
+                          size={24}
+                          color={colors.primary}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })
+          )}
         </ScrollView>
         {isGroupMode && selectedParticipants.length >= 2 && (
           <View style={styles.createGroupButton}>
@@ -282,7 +294,7 @@ const newConversationModal = () => {
               loading={isLoading}
             >
               <Typo fontWeight={"bold"} size={17}>
-                Create Group
+                Tạo nhóm
               </Typo>
             </Button>
           </View>
