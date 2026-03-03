@@ -37,6 +37,7 @@ const conversation = () => {
   const { conversationId, name, avatar, type } = useLocalSearchParams();
   const { user } = useAuth();
   const router = useRouter(); // Khai báo router
+  const isGroup = type === "group";
 
   const [image, setImage] = useState(null);
   const [message, setMessage] = useState("");
@@ -52,7 +53,6 @@ const conversation = () => {
     setShowHeaderMenu(false);
 
     // Xác định tiêu đề và nội dung cảnh báo dựa trên loại hội thoại
-    const isGroup = type === "group";
     const alertTitle = isGroup ? "Xóa nhóm" : "Xóa cuộc trò chuyện";
     const alertMessage = isGroup
       ? "Bạn có chắc không? Hành động này sẽ xóa vĩnh viễn nhóm và tất cả tin nhắn của mọi người. Chỉ chủ nhóm mới làm được."
@@ -191,7 +191,8 @@ const conversation = () => {
         );
         if (res.data.success) {
           const formattedMsgs = res.data.data.map(processMessage);
-          setMessages(formattedMsgs);
+          
+          setMessages([...formattedMsgs]);
         }
       } catch (error) {
         console.log(error);
@@ -329,12 +330,16 @@ const conversation = () => {
           }
           rightIcon={
             <>
-              <TouchableOpacity>
-                <Ionicons name="call" size={24} color={colors.white} />
-              </TouchableOpacity>
-              <TouchableOpacity>
-                <Ionicons name="videocam" size={24} color={colors.white} />
-              </TouchableOpacity>
+              {!isGroup && (
+                <>
+                  <TouchableOpacity onPress={() => router.push({ pathname: "/(main)/callscreen", params: { callID: conversationId, type: "audio" } })}>
+                    <Ionicons name="call" size={24} color={colors.white} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => router.push({ pathname: "/(main)/callscreen", params: { callID: conversationId, type: "video" } })}>
+                    <Ionicons name="videocam" size={24} color={colors.white} />
+                  </TouchableOpacity>
+                </>
+              )}
               <TouchableOpacity
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                 onPress={() => setShowHeaderMenu(true)}

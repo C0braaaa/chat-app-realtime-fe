@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import * as Clipboard from "expo-clipboard";
-import { FontAwesome5, Ionicons, Feather } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import moment from "moment";
 
 import { useAuth } from "@/contexts/authContext";
 import { colors, radius, spacingX, spacingY } from "@/constants/theme";
@@ -25,6 +26,16 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
   const isMe = item.isMe;
   const isLocal = item.isLocal;
   const [showMenu, setShowMenu] = useState(false);
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return "0 giây";
+
+    const d = moment.duration(seconds, "seconds");
+    const m = d.minutes();
+    const s = d.seconds();
+
+    return m > 0 ? `${m} phút ${s > 0 ? s + " giây" : ""}` : `${s} giây`;
+  };
 
   const BOT_ID = process.env.EXPO_PUBLIC_BOT_USER_ID;
 
@@ -59,6 +70,42 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
       setShowMenu(true);
     }
   };
+
+  const renderCallBubble = () => {
+    const { type, status, duration } = item.callData;
+    const isMissed = status === "missed" || status === "declined";
+    
+    // TÙM VÀ SỬA LẠI ĐOẠN ĐỊNH NGHĨA MÀU SẮC DƯỚI ĐÂY:
+    // colors.rose600 là màu đỏ, colors.primary là màu xanh blue của bạn
+
+    // 1. Màu icon (Dùng colors.white cho isMe nếu không bị nhỡ)
+    const callColor = isMissed 
+        ? colors.rose
+        : (isMe && colors.neutral600);
+
+    // 2. Màu text chính (Dùng colors.white cho isMe)
+    const textColor = isMe ? colors.neutral600 : colors.neutral900;
+
+    // 3. Màu text phụ (duration) (Dùng màu trắng mờ cho isMe)
+    const subTextColor = isMissed 
+        ? colors.rose 
+        : (isMe && colors.neutral600);
+
+    const title = type === "video" ? "Cuộc gọi video" : "Cuộc gọi thoại";
+    const subTitle = isMissed ? "Bị nhỡ" : formatDuration(duration);
+
+    return (
+        <View style={styles.callContainer}>
+            <View style={[styles.callIconWrapper, { backgroundColor: isMissed ? "rgba(225, 29, 72, 0.1)" : "rgba(255, 255, 255, 0.2)" }]}>
+                <MaterialCommunityIcons name={type === "video" ? "video" : "phone"} size={24} color={callColor} />
+            </View>
+            <View style={styles.callTextWrapper}>
+                <Typo fontWeight={"600"} color={textColor} size={15}>{title}</Typo>
+                <Typo fontWeight={"500"} color={subTextColor} size={13}>{subTitle}</Typo>
+            </View>
+        </View>
+    );
+};
   return (
     <View
       style={[
@@ -90,7 +137,7 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
             </Typo>
           )}
 
-          {item.attachement && (
+          {/* {item.attachement && (
             <View>
               <Image
                 source={item.attachement}
@@ -105,7 +152,27 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
               )}
             </View>
           )}
-          {item.content && <Typo size={15}>{item.content}</Typo>}
+          {item.content && <Typo size={15}>{item.content}</Typo>} */}
+          {item.isCall ? (
+            renderCallBubble()
+          ) : (
+            <>
+              {item.attachement && (<View>
+                <Image
+                  source={item.attachement}
+                  contentFit={"cover"}
+                  style={styles.attachment}
+                  transition={100}
+                />
+                {isLocal && (
+                  <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="small" color={colors.white} />
+                  </View>
+                )}
+              </View>)}
+              {item.content && <Typo size={15}>{item.content}</Typo>}
+            </>
+          )}
           <Typo
             style={{ alignSelf: "flex-end" }}
             size={11}
@@ -243,5 +310,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 10,
     gap: 5,
+  },
+  callContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacingX._10,
+    paddingVertical: spacingY._5,
+    minWidth: 160,
+  },
+  callIconWrapper: {
+    padding: 10,
+    borderRadius: radius.full,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  callTextWrapper: {
+    flexDirection: "column",
+    gap: 2,
   },
 });

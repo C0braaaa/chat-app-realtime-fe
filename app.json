@@ -13,13 +13,22 @@
       "backgroundColor": "#1c1917"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Cho phép C Chat truy cập Camera.",
+        "NSMicrophoneUsageDescription": "Cho phép C Chat truy cập Micro."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
       "package": "com.cobraa.cchat"
     },
     "web": {

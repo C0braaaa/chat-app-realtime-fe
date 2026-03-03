@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
+import { router } from "expo-router";
 
 const API_URL = `${process.env.EXPO_PUBLIC_BACKEND_URL}/v1/`;
 
@@ -27,8 +28,6 @@ api.interceptors.response.use(
   async (error) => {
     // Nếu Server trả về lỗi 401 (Token hết hạn hoặc không hợp lệ)
     if (error.response && error.response.status === 401) {
-      console.log("Token hết hạn! Đang đăng xuất...");
-
       // B1: Xóa Token cũ đi
       await SecureStore.deleteItemAsync("authToken");
 

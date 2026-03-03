@@ -13,6 +13,7 @@ export default function MainLayout() {
         options={{ presentation: "modal", animation: "slide_from_bottom" }}
       />
       <Stack.Screen name="conversation" />
+      <Stack.Screen name="callscreen" />
     </Stack>
   );
 }
