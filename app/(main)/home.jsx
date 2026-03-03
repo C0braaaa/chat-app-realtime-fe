@@ -25,7 +25,7 @@ import Loading from "@/components/Loading";
 import Button from "@/components/Button";
 import api from "@/utils/api";
 
-const SOCKET_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const SOCKET_URL = 'https://cchat-be.onrender.com';
 const home = () => {
   const { user } = useAuth();
   const router = useRouter();

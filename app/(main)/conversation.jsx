@@ -31,7 +31,7 @@ import Input from "@/components/Input";
 import api from "@/utils/api";
 import { useAuth } from "@/contexts/authContext";
 
-const SOCKET_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const SOCKET_URL = "https://cchat-be.onrender.com";
 
 const conversation = () => {
   const { conversationId, name, avatar, type } = useLocalSearchParams();

@@ -2,7 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { router } from "expo-router";
 
-const API_URL = `${process.env.EXPO_PUBLIC_BACKEND_URL}/v1/`;
+const API_URL = "https://cchat-be.onrender.com/v1/";
 
 const api = axios.create({
   baseURL: API_URL,

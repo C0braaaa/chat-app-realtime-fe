@@ -210,6 +210,11 @@ const ProfileModal = () => {
           </Typo>
         </Button>
       </View>
+      <View style={{ alignItems: "center"}}>
+        <Typo color={colors.neutral400} fontWeight={"400"} style={{marginTop: spacingY._5}}>
+          Phiên bản 1.1.0
+        </Typo>
+      </View>
     </ScreenWrapper>
   );
 };
@@ -230,7 +235,7 @@ const styles = StyleSheet.create({
     gap: scale(12),
     paddingTop: spacingY._15,
     borderTopColor: colors.neutral200,
-    marginBottom: spacingY._10,
+    marginBottom: spacingY._5,
     borderTopWidth: 1,
   },
   form: {
