@@ -29,34 +29,37 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
 
   const formatDuration = (seconds) => {
     if (!seconds) return "0 giây";
-
     const d = moment.duration(seconds, "seconds");
     const m = d.minutes();
     const s = d.seconds();
-
     return m > 0 ? `${m} phút ${s > 0 ? s + " giây" : ""}` : `${s} giây`;
   };
 
   const BOT_ID = process.env.EXPO_PUBLIC_BOT_USER_ID;
-
-  const senderIdStr =
-    typeof item.sender === "object" ? item.sender?._id : item.sender;
+  const senderIdStr = typeof item.sender === "object" ? item.sender?._id : item.sender;
   const isBotMessage = senderIdStr === BOT_ID;
   const shouldShowAvatarAndName = !isMe;
+
+  let isCallMessage = false;
+  let callData = null;
+
+  try {
+    const parsedContent = JSON.parse(item.content);
+    if (parsedContent.isCall && parsedContent.callData) {
+      isCallMessage = true;
+      callData = parsedContent.callData;
+    }
+  } catch (e) {
+  }
 
   const handleDelete = async () => {
     setShowMenu(false);
     try {
-      const res = await api.delete(`/messages/${item.id}`, {
-        data: { userId: user._id },
-      });
-      if (res.data.success) {
-        if (onDelete) onDelete(item.id);
-      } else {
-        Alert.alert("Error", "Cannot delete message");
-      }
+      const res = await api.delete(`/messages/${item.id}`, { data: { userId: user._id } });
+      if (res.data.success && onDelete) onDelete(item.id);
+      else Alert.alert("Lỗi", "Không thể xóa tin nhắn");
     } catch (error) {
-      Alert.alert("Error", "Failed to delete message");
+      Alert.alert("Lỗi", "Có lỗi xảy ra khi xóa tin nhắn");
     }
   };
 
@@ -66,161 +69,87 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
   };
 
   const handleLongPress = () => {
-    if (isMe) {
-      setShowMenu(true);
-    }
+    if (isMe) setShowMenu(true);
   };
 
   const renderCallBubble = () => {
-    const { type, status, duration } = item.callData;
+    if (!callData) return null;
+
+    const { type, status, duration } = callData;
     const isMissed = status === "missed" || status === "declined";
-    
-    // TÙM VÀ SỬA LẠI ĐOẠN ĐỊNH NGHĨA MÀU SẮC DƯỚI ĐÂY:
-    // colors.rose600 là màu đỏ, colors.primary là màu xanh blue của bạn
 
-    // 1. Màu icon (Dùng colors.white cho isMe nếu không bị nhỡ)
-    const callColor = isMissed 
-        ? colors.rose
-        : (isMe && colors.neutral600);
-
-    // 2. Màu text chính (Dùng colors.white cho isMe)
+    const callColor = isMissed ? colors.rose : (isMe ? colors.neutral600 : colors.primary);
     const textColor = isMe ? colors.neutral600 : colors.neutral900;
-
-    // 3. Màu text phụ (duration) (Dùng màu trắng mờ cho isMe)
-    const subTextColor = isMissed 
-        ? colors.rose 
-        : (isMe && colors.neutral600);
+    const subTextColor = isMissed ? colors.rose : (isMe ? colors.neutral500 : colors.neutral600);
+    const bgColor = isMissed ? "rgba(225, 29, 72, 0.1)" : "rgba(0, 0, 0, 0.05)";
 
     const title = type === "video" ? "Cuộc gọi video" : "Cuộc gọi thoại";
-    const subTitle = isMissed ? "Bị nhỡ" : formatDuration(duration);
+    const subTitle = isMissed ? "Cuộc gọi nhỡ" : formatDuration(duration);
+    const iconName = type === "video" ? (isMissed ? "video-off" : "video") : (isMissed ? "phone-missed" : "phone");
 
     return (
-        <View style={styles.callContainer}>
-            <View style={[styles.callIconWrapper, { backgroundColor: isMissed ? "rgba(225, 29, 72, 0.1)" : "rgba(255, 255, 255, 0.2)" }]}>
-                <MaterialCommunityIcons name={type === "video" ? "video" : "phone"} size={24} color={callColor} />
-            </View>
-            <View style={styles.callTextWrapper}>
-                <Typo fontWeight={"600"} color={textColor} size={15}>{title}</Typo>
-                <Typo fontWeight={"500"} color={subTextColor} size={13}>{subTitle}</Typo>
-            </View>
+      <View style={styles.callContainer}>
+        <View style={[styles.callIconWrapper, { backgroundColor: bgColor }]}>
+          <MaterialCommunityIcons name={iconName} size={24} color={callColor} />
         </View>
+        <View style={styles.callTextWrapper}>
+          <Typo fontWeight={"600"} color={textColor} size={15}>{title}</Typo>
+          <Typo fontWeight={"500"} color={subTextColor} size={13}>{subTitle}</Typo>
+        </View>
+      </View>
     );
-};
-  return (
-    <View
-      style={[
-        styles.messageContainer,
-        isMe ? styles.myMessage : styles.theirMessage,
-        isLocal && { opacity: 0.7 },
-      ]}
-    >
-      {shouldShowAvatarAndName && (
-        <Avatar
-          size={35}
-          uri={item.sender?.avatar}
-          style={styles.messageAvatar}
-        />
-      )}
-      <TouchableWithoutFeedback
-        onLongPress={handleLongPress}
-        delayLongPress={400}
-      >
-        <View
-          style={[
-            styles.messageBuddle,
-            isMe ? styles.myBuddle : styles.theirBudde,
-          ]}
-        >
-          {shouldShowAvatarAndName && (
-            <Typo color={colors.neutral900} fontWeight={"600"} size={13}>
-              {item.sender?.name}
-            </Typo>
-          )}
+  };
 
-          {/* {item.attachement && (
-            <View>
-              <Image
-                source={item.attachement}
-                contentFit={"cover"}
-                style={styles.attachment}
-                transition={100}
-              />
-              {isLocal && (
-                <View style={styles.loadingOverlay}>
-                  <ActivityIndicator size="small" color={colors.white} />
-                </View>
-              )}
-            </View>
+  return (
+    <View style={[styles.messageContainer, isMe ? styles.myMessage : styles.theirMessage, isLocal && { opacity: 0.7 }]}>
+      {shouldShowAvatarAndName && (
+        <Avatar size={35} uri={item.sender?.avatar} style={styles.messageAvatar} />
+      )}
+      <TouchableWithoutFeedback onLongPress={handleLongPress} delayLongPress={400}>
+        <View style={[styles.messageBuddle, isMe ? styles.myBuddle : styles.theirBudde]}>
+          {shouldShowAvatarAndName && (
+            <Typo color={colors.neutral900} fontWeight={"600"} size={13}>{item.sender?.name}</Typo>
           )}
-          {item.content && <Typo size={15}>{item.content}</Typo>} */}
-          {item.isCall ? (
+          {isCallMessage ? (
             renderCallBubble()
           ) : (
             <>
-              {item.attachement && (<View>
-                <Image
-                  source={item.attachement}
-                  contentFit={"cover"}
-                  style={styles.attachment}
-                  transition={100}
-                />
-                {isLocal && (
-                  <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="small" color={colors.white} />
-                  </View>
-                )}
-              </View>)}
+              {item.attachement && (
+                <View>
+                  <Image source={item.attachement} contentFit={"cover"} style={styles.attachment} transition={100} />
+                  {isLocal && (
+                    <View style={styles.loadingOverlay}>
+                      <ActivityIndicator size="small" color={colors.white} />
+                    </View>
+                  )}
+                </View>
+              )}
               {item.content && <Typo size={15}>{item.content}</Typo>}
             </>
           )}
-          <Typo
-            style={{ alignSelf: "flex-end" }}
-            size={11}
-            fontWeight={"500"}
-            color={colors.neutral600}
-          >
+          <Typo style={{ alignSelf: "flex-end", marginTop: 4 }} size={11} fontWeight={"500"} color={colors.neutral600}>
             {item.createdAt}
           </Typo>
         </View>
       </TouchableWithoutFeedback>
-      <Modal
-        visible={showMenu}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowMenu(false)}
-      >
+
+      {/* Modal Menu giữ nguyên */}
+      <Modal visible={showMenu} transparent={true} animationType="slide" onRequestClose={() => setShowMenu(false)}>
         <TouchableWithoutFeedback onPress={() => setShowMenu(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.menuContent}>
                 <TouchableOpacity style={styles.menuItem}>
-                  <Ionicons
-                    name="copy-outline"
-                    size={20}
-                    color={colors.white}
-                  />
-                  <Typo size={16} color={colors.white} fontWeight={"500"}>
-                    Copy
-                  </Typo>
+                  <Ionicons name="copy-outline" size={20} color={colors.white} />
+                  <Typo size={16} color={colors.white} fontWeight={"500"}>Copy</Typo>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={handleDelete}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={20}
-                    color={colors.white}
-                  />
-                  <Typo size={16} color={colors.white} fontWeight={"500"}>
-                    Delete
-                  </Typo>
+                <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
+                  <Ionicons name="trash-outline" size={20} color={colors.white} />
+                  <Typo size={16} color={colors.white} fontWeight={"500"}>Delete</Typo>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem} onPress={handleEdit}>
                   <Feather name="edit-2" size={20} color={colors.white} />
-                  <Typo size={16} color={colors.white} fontWeight={"500"}>
-                    Edit
-                  </Typo>
+                  <Typo size={16} color={colors.white} fontWeight={"500"}>Edit</Typo>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
@@ -234,98 +163,21 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
 export default MessageItem;
 
 const styles = StyleSheet.create({
-  // messageOptions: {
-  //   alignItems: "center",
-  // },
-  messageContainer: {
-    flexDirection: "row",
-    gap: spacingX._7,
-    maxWidth: "80%",
-    marginBottom: spacingY._12,
-    alignItems: "center",
-  },
-  myMessage: {
-    alignSelf: "flex-end",
-  },
-  theirMessage: {
-    alignSelf: "flex-start",
-  },
-  messageAvatar: {
-    alignSelf: "flex-end",
-  },
-  attachment: {
-    height: verticalScale(180),
-    width: verticalScale(180),
-    borderRadius: radius._10,
-  },
-  messageBuddle: {
-    padding: spacingX._10,
-    borderRadius: radius._15,
-    gap: spacingY._5,
-  },
-  myBuddle: {
-    backgroundColor: colors.myBubble,
-  },
-  theirBudde: {
-    backgroundColor: colors.otherBubble,
-  },
-  loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    // backgroundColor: "rgba(0,0,0,0.3)",
-    borderRadius: radius._10,
-  },
-  // modal style
-  modalOverlay: {
-    flex: 1,
-    // backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  menuContent: {
-    width: "100%",
-    flexDirection: "row",
-    alignSelf: "flex-end",
-    justifyContent: "space-between",
-    backgroundColor: "#292929",
-    padding: spacingY._15,
-    paddingBottom: spacingY._15,
-    paddingLeft: spacingX._30,
-    paddingRight: spacingX._30,
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  menuItem: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    gap: 5,
-  },
-  callContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacingX._10,
-    paddingVertical: spacingY._5,
-    minWidth: 160,
-  },
-  callIconWrapper: {
-    padding: 10,
-    borderRadius: radius.full,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  callTextWrapper: {
-    flexDirection: "column",
-    gap: 2,
-  },
+  messageContainer: { flexDirection: "row", gap: spacingX._7, maxWidth: "80%", marginBottom: spacingY._12, alignItems: "center" },
+  myMessage: { alignSelf: "flex-end" },
+  theirMessage: { alignSelf: "flex-start" },
+  messageAvatar: { alignSelf: "flex-end" },
+  attachment: { height: verticalScale(180), width: verticalScale(180), borderRadius: radius._10 },
+  messageBuddle: { padding: spacingX._10, borderRadius: radius._15, minWidth: 100 },
+  myBuddle: { backgroundColor: colors.myBubble },
+  theirBudde: { backgroundColor: colors.otherBubble },
+  loadingOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center", borderRadius: radius._10 },
+  modalOverlay: { flex: 1, justifyContent: "flex-end" },
+  menuContent: { width: "100%", flexDirection: "row", alignSelf: "flex-end", justifyContent: "space-between", backgroundColor: "#292929", padding: spacingY._15, paddingBottom: spacingY._15, paddingLeft: spacingX._30, paddingRight: spacingX._30, elevation: 5 },
+  menuItem: { flexDirection: "column", alignItems: "center", justifyContent: "center", paddingVertical: 12, paddingHorizontal: 10, gap: 5 },
+
+  // Style cho bong bóng cuộc gọi
+  callContainer: { flexDirection: "row", alignItems: "center", gap: spacingX._10, paddingVertical: spacingY._5, minWidth: 160 },
+  callIconWrapper: { padding: 10, borderRadius: radius.full, justifyContent: "center", alignItems: "center" },
+  callTextWrapper: { flexDirection: "column", gap: 2, justifyContent: "center" },
 });

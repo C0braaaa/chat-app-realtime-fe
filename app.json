@@ -48,11 +48,16 @@
             "targetSdkVersion": 34
           }
         }
+      ],
+      [
+        "@stream-io/video-react-native-sdk",
+        {
+          "cameraPermissionText": "C Chat cần quyền truy cập Camera.",
+          "microphonePermissionText": "C Chat cần quyền truy cập Micro."
+        }
       ]
     ],
     "extra": {
-      "EXPO_PUBLIC_APP_ID": "682284813",
-      "EXPO_PUBLIC_APP_SIGN": "b41af788c9e627ba9d8e99120844b5e698fe9c3939dc52de08edb0b5670f253f",
       "router": {
         "origin": false
       },

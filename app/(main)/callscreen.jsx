@@ -1,180 +1,53 @@
-import React, { useEffect, useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  Platform,
-  PermissionsAndroid,
-  TouchableOpacity,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useAuth } from "@/contexts/authContext";
-import * as ImagePicker from "expo-image-picker";
+import React, { useEffect } from 'react';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CallContent, useStreamVideoClient } from '@stream-io/video-react-native-sdk';
 import api from "@/utils/api";
-import Constants from "expo-constants";
-import { ZegoUIKitPrebuiltCallInCallScreen } from "@zegocloud/zego-uikit-prebuilt-call-rn";
+import { useAuth } from "@/contexts/authContext";
 
 export default function CallScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const { callID, type } = useLocalSearchParams();
+  const client = useStreamVideoClient();
+  const [call, setCall] = React.useState(null);
 
-  const isVideoCall = type === "video";
-  const isExpoGo = Constants.appOwnership === "expo";
-
-  const [permissionReady, setPermissionReady] = useState(false);
-  const [permissionDenied, setPermissionDenied] = useState(false);
-
-  const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
-  const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
-
-  // 1. Xin quyền camera + micro
   useEffect(() => {
-    let cancelled = false;
+    if (!client || !callID) return;
 
-    const requestPermissions = async () => {
-      if (Platform.OS === "android") {
-        try {
-          const granted = await PermissionsAndroid.requestMultiple([
-            PermissionsAndroid.PERMISSIONS.CAMERA,
-            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          ]);
-          if (cancelled) return;
+    // Tạo hoặc tham gia cuộc gọi
+    const _call = client.call('default', callID);
+    _call.join({ create: true }).then(() => setCall(_call));
 
-          const cameraOk =
-            granted[PermissionsAndroid.PERMISSIONS.CAMERA] === "granted";
-          const micOk =
-            granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === "granted";
-
-          if (cameraOk && micOk) {
-            setPermissionReady(true);
-          } else {
-            setPermissionDenied(true);
-          }
-        } catch {
-          if (!cancelled) setPermissionDenied(true);
-        }
-      } else {
-        // iOS: xin quyền camera (micro sẽ hỏi lần đầu khi dùng)
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (cancelled) return;
-        if (status === "granted") {
-          setPermissionReady(true);
-        } else {
-          setPermissionDenied(true);
-        }
-      }
-    };
-
-    requestPermissions();
     return () => {
-      cancelled = true;
+      if (_call) _call.leave();
     };
-  }, []);
+  }, [client, callID]);
 
-  // 2. Lưu lịch sử cuộc gọi sau khi kết thúc
+  // Hàm lưu lịch sử giống hệt logic cũ của bạn
   const handleSaveCallHistory = async () => {
     try {
       const messageContent = JSON.stringify({
         isCall: true,
-        callData: {
-          type: isVideoCall ? "video" : "audio",
-          status: "completed",
-          duration: 0,
-        },
+        callData: { type, status: "completed", duration: 0 },
       });
-
       await api.post("/messages", {
         conversationId: callID,
         content: messageContent,
         senderId: user?._id,
       });
     } catch (error) {
-      console.log("Lỗi bắn tin nhắn cuộc gọi:", error);
+        console.log("Lỗi lưu lịch sử:", error);
     }
   };
 
-  // ====== Fallback UI các trường hợp ======
+  if (!call) return <View style={styles.loading}><ActivityIndicator size="large" /></View>;
 
-  // Chưa có user từ context
-  if (!user || !user._id) {
-    return (
-      <View style={styles.fallback}>
-        <Text style={styles.fallbackText}>Đang tải dữ liệu kết nối...</Text>
-      </View>
-    );
-  }
-
-  // Bị từ chối quyền
-  if (permissionDenied) {
-    return (
-      <View style={styles.fallback}>
-        <Text style={styles.fallbackTitle}>Cần quyền Camera và Micro</Text>
-        <Text style={styles.fallbackText}>
-          Vui lòng bật quyền Camera và Micro trong Cài đặt để gọi điện / video.
-        </Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.fallbackLink}>Quay lại</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // Đang xin quyền
-  if (!permissionReady) {
-    return (
-      <View style={styles.fallback}>
-        <Text style={styles.fallbackText}>Đang xin quyền camera, micro...</Text>
-      </View>
-    );
-  }
-
-  // Thiếu APP_ID / APP_SIGN
-  if (!appId || !appSign) {
-    return (
-      <View style={styles.fallback}>
-        <Text style={styles.fallbackTitle}>Thiếu cấu hình Zego</Text>
-        <Text style={styles.fallbackText}>
-          Cần cấu hình EXPO_PUBLIC_APP_ID và EXPO_PUBLIC_APP_SIGN.
-        </Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.fallbackLink}>Quay lại</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // Expo Go không hỗ trợ native của Zego
-  if (isExpoGo) {
-    return (
-      <View style={styles.fallback}>
-        <Text style={styles.fallbackTitle}>Call không chạy trên Expo Go</Text>
-        <Text style={styles.fallbackText}>
-          Bạn cần mở app bằng bản dev-client hoặc APK build từ EAS để dùng gọi
-          điện/video.
-        </Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.fallbackLink}>Quay lại</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // ====== Trường hợp OK: render Zego ======
   return (
     <View style={styles.container}>
-      <ZegoUIKitPrebuiltCallInCallScreen
-        appID={appId}
-        appSign={appSign}
-        userID={String(user._id)}
-        userName={String(user.name || "User")}
-        callID={String(callID || "")}
-        config={{
-          turnOnCameraWhenJoining: isVideoCall,
-          useSpeakerWhenJoining: isVideoCall,
-          onHangUp: () => {
-            handleSaveCallHistory().finally(() => router.back());
-          },
+      <CallContent 
+        onHangupCallHandler={() => {
+          handleSaveCallHistory().finally(() => router.back());
         }}
       />
     </View>
@@ -182,25 +55,6 @@ export default function CallScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  fallback: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
-    backgroundColor: "#000",
-  },
-  fallbackTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  fallbackText: {
-    color: "#d4d4d4",
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  fallbackLink: { color: "#60a5fa", fontSize: 15, fontWeight: "600" },
-  backBtn: { alignSelf: "flex-start" },
+  container: { flex: 1, backgroundColor: '#000' },
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }
 });
