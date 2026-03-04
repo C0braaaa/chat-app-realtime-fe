@@ -34,7 +34,7 @@ import { useAuth } from "@/contexts/authContext";
 const SOCKET_URL = "https://cchat-be.onrender.com";
 
 const conversation = () => {
-  const { conversationId, name, avatar, type } = useLocalSearchParams();
+  const { conversationId, name, avatar, type, peerId } = useLocalSearchParams();
   const { user } = useAuth();
   const router = useRouter(); // Khai báo router
   const isGroup = type === "group";
@@ -332,10 +332,10 @@ const conversation = () => {
             <>
               {!isGroup && (
                 <>
-                  <TouchableOpacity onPress={() => router.push({ pathname: "/(main)/callscreen", params: { callID: conversationId, type: "audio" } })}>
+                  <TouchableOpacity onPress={() => router.push({ pathname: "/(main)/callscreen", params: { callID: conversationId, type: "audio", receiverId: peerId } })}>
                     <Ionicons name="call" size={24} color={colors.white} />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => router.push({ pathname: "/(main)/callscreen", params: { callID: conversationId, type: "video" } })}>
+                  <TouchableOpacity onPress={() => router.push({ pathname: "/(main)/callscreen", params: { callID: conversationId, type: "video", receiverId: peerId } })}>
                     <Ionicons name="videocam" size={24} color={colors.white} />
                   </TouchableOpacity>
                 </>

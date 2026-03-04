@@ -15,6 +15,7 @@ const ConversationItem = ({ item, router, showDivider, currentUser }) => {
       return {
         name: item.name,
         avatar: item.avatar,
+        peerId: null,
       };
     }
     const otherUser = item.participants.find((p) => p._id !== currentUser?._id);
@@ -22,9 +23,10 @@ const ConversationItem = ({ item, router, showDivider, currentUser }) => {
     return {
       name: otherUser?.name || "Unknown User",
       avatar: otherUser?.avatar || null,
+      peerId: otherUser?._id || null,
     };
   };
-  const { name, avatar } = getDisplayInfo();
+  const { name, avatar, peerId } = getDisplayInfo();
 
   const getLastMessageContent = () => {
     if (!lastMessage) return "Say hi 👋";
@@ -62,6 +64,7 @@ const ConversationItem = ({ item, router, showDivider, currentUser }) => {
               name: name,
               avatar: avatar,
               type: item.type,
+              peerId: peerId,
             },
           })
         }
