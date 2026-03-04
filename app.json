@@ -3,7 +3,7 @@
     "name": "C Chat",
     "slug": "c-chat",
     "scheme": "c-chat",
-    "version": "1.1.7",
+    "version": "1.1.8",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
