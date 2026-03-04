@@ -6,32 +6,41 @@ import {
   Platform,
   PermissionsAndroid,
   TouchableOpacity,
+  NativeModules,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/contexts/authContext";
 import * as ImagePicker from "expo-image-picker";
-
-let ZegoUIKitPrebuiltCallInCallScreen = null;
-try {
-  ZegoUIKitPrebuiltCallInCallScreen =
-    require("@zegocloud/zego-uikit-prebuilt-call-rn")
-      ?.ZegoUIKitPrebuiltCallInCallScreen;
-} catch {
-  ZegoUIKitPrebuiltCallInCallScreen = null;
-}
+import api from "@/utils/api";
+import Constants from "expo-constants";
 
 export default function CallScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const { callID, type } = useLocalSearchParams();
   const isVideoCall = type === "video";
+  const isExpoGo = Constants.appOwnership === "expo";
+
+  const [ZegoUIKitPrebuiltCallInCallScreen, setZegoUIKitPrebuiltCallInCallScreen] =
+    useState(null);
+  const [zegoLoadFailed, setZegoLoadFailed] = useState(false);
+
+  const nm = NativeModules || {};
+  const hasZegoNative = !!(
+    nm.ZegoExpressEngine ||
+    nm.ZegoExpressEngineModule ||
+    nm.ZegoZIM ||
+    nm.ZegoZIMModule
+  );
 
   const [permissionReady, setPermissionReady] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
+  const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
+  const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
+
   useEffect(() => {
     let cancelled = false;
-
     const requestPermissions = async () => {
       if (Platform.OS === "android") {
         try {
@@ -40,10 +49,8 @@ export default function CallScreen() {
             PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           ]);
           if (cancelled) return;
-          const cameraOk =
-            granted[PermissionsAndroid.PERMISSIONS.CAMERA] === "granted";
-          const micOk =
-            granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === "granted";
+          const cameraOk = granted[PermissionsAndroid.PERMISSIONS.CAMERA] === "granted";
+          const micOk = granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === "granted";
           if (cameraOk && micOk) {
             setPermissionReady(true);
           } else {
@@ -64,23 +71,66 @@ export default function CallScreen() {
     };
 
     requestPermissions();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  if (!ZegoUIKitPrebuiltCallInCallScreen) {
+  // IMPORTANT: hook này phải nằm TRƯỚC mọi return điều kiện (tránh lỗi "Rendered more hooks...")
+  useEffect(() => {
+    if (isExpoGo) return;
+    if (!user || !user._id) return;
+    if (!permissionReady) return;
+    if (!appId || !appSign) return;
+    if (!hasZegoNative) return;
+    if (ZegoUIKitPrebuiltCallInCallScreen || zegoLoadFailed) return;
+
+    try {
+      // eslint-disable-next-line global-require
+      const mod = require("@zegocloud/zego-uikit-prebuilt-call-rn");
+      const Comp = mod && mod.ZegoUIKitPrebuiltCallInCallScreen;
+      if (Comp) {
+        setZegoUIKitPrebuiltCallInCallScreen(() => Comp);
+      } else {
+        setZegoLoadFailed(true);
+      }
+    } catch {
+      setZegoLoadFailed(true);
+    }
+  }, [
+    isExpoGo,
+    user,
+    permissionReady,
+    appId,
+    appSign,
+    hasZegoNative,
+    ZegoUIKitPrebuiltCallInCallScreen,
+    zegoLoadFailed,
+  ]);
+
+  const handleSaveCallHistory = async () => {
+    try {
+      const messageContent = JSON.stringify({
+        isCall: true,
+        callData: {
+          type: isVideoCall ? "video" : "audio",
+          status: "completed", 
+          duration: 0 
+        }
+      });
+      await api.post("/messages", {
+        conversationId: callID,
+        content: messageContent,
+        senderId: user?._id
+      });
+    } catch (error) {
+      console.log("Lỗi bắn tin nhắn cuộc gọi:", error);
+    }
+  };
+
+  // 🚀 CHỐT CHẶN 1: Bắt buộc đợi Context tải xong User
+  if (!user || !user._id) {
     return (
       <View style={styles.fallback}>
-        <Text style={styles.fallbackTitle}>
-          Call chưa khả dụng trên bản build này
-        </Text>
-        <Text style={styles.fallbackText}>
-          Cần build bằng profile có dev-client (EAS) để dùng chức năng gọi.
-        </Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.fallbackLink}>Quay lại</Text>
-        </TouchableOpacity>
+        <Text style={styles.fallbackText}>Đang tải dữ liệu kết nối...</Text>
       </View>
     );
   }
@@ -89,9 +139,7 @@ export default function CallScreen() {
     return (
       <View style={styles.fallback}>
         <Text style={styles.fallbackTitle}>Cần quyền Camera và Micro</Text>
-        <Text style={styles.fallbackText}>
-          Vui lòng bật quyền Camera và Micro trong Cài đặt để gọi điện / video.
-        </Text>
+        <Text style={styles.fallbackText}>Vui lòng bật quyền Camera và Micro trong Cài đặt để gọi điện / video.</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
         </TouchableOpacity>
@@ -106,15 +154,42 @@ export default function CallScreen() {
       </View>
     );
   }
-
-  const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
-  const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
+  
   if (!appId || !appSign) {
     return (
       <View style={styles.fallback}>
         <Text style={styles.fallbackTitle}>Thiếu cấu hình Zego</Text>
+        <Text style={styles.fallbackText}>Cần cấu hình EXPO_PUBLIC_APP_ID và EXPO_PUBLIC_APP_SIGN.</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Text style={styles.fallbackLink}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (isExpoGo) {
+    return (
+      <View style={styles.fallback}>
+        <Text style={styles.fallbackTitle}>Call không chạy trên Expo Go</Text>
         <Text style={styles.fallbackText}>
-          Cần cấu hình EXPO_PUBLIC_APP_ID và EXPO_PUBLIC_APP_SIGN (EAS env).
+          Bạn cần mở app bằng bản dev-client / APK build từ EAS để dùng gọi
+          điện/video.
+        </Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Text style={styles.fallbackLink}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (zegoLoadFailed || !ZegoUIKitPrebuiltCallInCallScreen || !hasZegoNative) {
+    return (
+      <View style={styles.fallback}>
+        <Text style={styles.fallbackTitle}>Không thể tải Zego Call</Text>
+        <Text style={styles.fallbackText}>
+          Bản build hiện tại chưa nhúng đủ native modules của Zego hoặc load
+          module thất bại. Hãy build lại bằng profile `development` (dev-client)
+          và cài APK mới.
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
@@ -128,14 +203,14 @@ export default function CallScreen() {
       <ZegoUIKitPrebuiltCallInCallScreen
         appID={appId}
         appSign={appSign}
-        userID={user?._id}
-        userName={user?.name}
-        callID={callID}
+        userID={String(user._id)} // 🚀 CHỐT CHẶN 2: Ép kiểu String tuyệt đối (Không C++ sẽ crash)
+        userName={String(user.name || "User")} // 🚀 CHỐT CHẶN 2: Ép kiểu String
+        callID={String(callID || "")}
         config={{
           turnOnCameraWhenJoining: isVideoCall,
           useSpeakerWhenJoining: isVideoCall,
           onHangUp: () => {
-            router.back();
+            handleSaveCallHistory().then(() => router.back());
           },
         }}
       />
@@ -144,33 +219,10 @@ export default function CallScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  fallback: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
-    backgroundColor: "#000",
-  },
-  fallbackTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  fallbackText: {
-    color: "#d4d4d4",
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  fallbackLink: {
-    color: "#60a5fa",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  backBtn: {
-    alignSelf: "flex-start",
-  },
+  container: { flex: 1 },
+  fallback: { flex: 1, padding: 20, justifyContent: "center", backgroundColor: "#000" },
+  fallbackTitle: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 8 },
+  fallbackText: { color: "#d4d4d4", fontSize: 14, lineHeight: 20, marginBottom: 16 },
+  fallbackLink: { color: "#60a5fa", fontSize: 15, fontWeight: "600" },
+  backBtn: { alignSelf: "flex-start" },
 });

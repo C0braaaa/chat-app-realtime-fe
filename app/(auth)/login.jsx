@@ -97,7 +97,7 @@ const login = () => {
         <View style={styles.container}>
           <View style={styles.header}>
             <BackButton iconSize={28} />
-            <TouchableOpacity onPress={() => router.push("/forgot")}>
+            <TouchableOpacity onPress={() => router.push("/(auth)/forgot")}>
               <Typo size={17} color={colors.white}>
                 Quên mật khẩu?
               </Typo>

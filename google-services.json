@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "554769689678",
+    "project_id": "cchat-push",
+    "storage_bucket": "cchat-push.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:554769689678:android:f18fbcb71bbb627987671f",
+        "android_client_info": {
+          "package_name": "com.cobraa.cchat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1XQBLOE4wJOqUrS5Z_GGYFkOjCZ5xmAQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

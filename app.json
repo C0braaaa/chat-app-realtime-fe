@@ -3,7 +3,7 @@
     "name": "C Chat",
     "slug": "c-chat",
     "scheme": "c-chat",
-    "version": "1.0.0",
+    "version": "1.1.5 ",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
@@ -29,7 +29,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.cobraa.cchat"
+      "package": "com.cobraa.cchat",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,12 +38,24 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {
         "projectId": "81e69662-5290-4dae-b3ec-af9d1ceed193"
-      }
+      },
+      "EXPO_PUBLIC_APP_ID": "682284813",
+      "EXPO_PUBLIC_APP_SIGN": "b41af788c9e627ba9d8e99120844b5e698fe9c3939dc52de08edb0b5670f253f"
     }
   }
 }

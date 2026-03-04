@@ -34,7 +34,7 @@ const Welcome = () => {
           onPress={() => router.push("/(auth)/login")}
         >
           <Typo size={23} fontWeight={"bold"}>
-            Get Started
+            Bắt Đầu
           </Typo>
         </Button>
       </View>

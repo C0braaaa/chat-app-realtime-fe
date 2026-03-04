@@ -212,7 +212,7 @@ const ProfileModal = () => {
       </View>
       <View style={{ alignItems: "center"}}>
         <Typo color={colors.neutral400} fontWeight={"400"} style={{marginTop: spacingY._5}}>
-          Phiên bản 1.1.0
+          v1.1.5
         </Typo>
       </View>
     </ScreenWrapper>
