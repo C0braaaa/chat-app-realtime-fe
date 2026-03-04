@@ -3,7 +3,7 @@
     "name": "C Chat",
     "slug": "c-chat",
     "scheme": "c-chat",
-    "version": "1.1.8",
+    "version": "1.1.10",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
@@ -30,6 +30,7 @@
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "package": "com.cobraa.cchat",
+      "proguardRuleFiles": ["./proguard-rules.pro"],
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -43,19 +44,11 @@
         "expo-build-properties",
         {
           "android": {
-            "minSdkVersion": 24,
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34
+            "kotlinVersion": "1.8.10"
           }
         }
       ],
-      [
-        "@stream-io/video-react-native-sdk",
-        {
-          "cameraPermissionText": "C Chat cần quyền truy cập Camera.",
-          "microphonePermissionText": "C Chat cần quyền truy cập Micro."
-        }
-      ]
+      ["zego-express-engine-reactnative"]
     ],
     "extra": {
       "router": {

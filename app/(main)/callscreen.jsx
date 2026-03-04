@@ -1,60 +1,54 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { CallContent, useStreamVideoClient } from '@stream-io/video-react-native-sdk';
-import api from "@/utils/api";
+import ZegoUIKitPrebuiltCallInCallScreen from '@zegocloud/zego-uikit-prebuilt-call-rn';
 import { useAuth } from "@/contexts/authContext";
+import api from "@/utils/api";
 
 export default function CallScreen() {
-  const { user } = useAuth();
-  const router = useRouter();
-  const { callID, type } = useLocalSearchParams();
-  const client = useStreamVideoClient();
-  const [call, setCall] = React.useState(null);
+    const { user } = useAuth();
+    const router = useRouter();
+    const { callID, type } = useLocalSearchParams();
 
-  useEffect(() => {
-    if (!client || !callID) return;
+    // Lấy Key từ .env
+    const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
+    const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
 
-    // Tạo hoặc tham gia cuộc gọi
-    const _call = client.call('default', callID);
-    _call.join({ create: true }).then(() => setCall(_call));
-
-    return () => {
-      if (_call) _call.leave();
+    const handleSaveCallHistory = async (status, duration) => {
+        try {
+            const messageContent = JSON.stringify({
+                isCall: true,
+                callData: { type, status, duration },
+            });
+            await api.post("/messages", {
+                conversationId: callID,
+                content: messageContent,
+                senderId: user?._id,
+            });
+        } catch (error) {
+            console.log("Lỗi lưu lịch sử:", error);
+        }
     };
-  }, [client, callID]);
 
-  // Hàm lưu lịch sử giống hệt logic cũ của bạn
-  const handleSaveCallHistory = async () => {
-    try {
-      const messageContent = JSON.stringify({
-        isCall: true,
-        callData: { type, status: "completed", duration: 0 },
-      });
-      await api.post("/messages", {
-        conversationId: callID,
-        content: messageContent,
-        senderId: user?._id,
-      });
-    } catch (error) {
-        console.log("Lỗi lưu lịch sử:", error);
-    }
-  };
+    if (!user || !callID) return null;
 
-  if (!call) return <View style={styles.loading}><ActivityIndicator size="large" /></View>;
-
-  return (
-    <View style={styles.container}>
-      <CallContent 
-        onHangupCallHandler={() => {
-          handleSaveCallHistory().finally(() => router.back());
-        }}
-      />
-    </View>
-  );
+    return (
+        <View style={styles.container}>
+            <ZegoUIKitPrebuiltCallInCallScreen
+                appID={appId}
+                appSign={appSign}
+                userID={String(user._id)}
+                userName={user.name || "User"}
+                callID={callID}
+                config={{
+                    onHangUp: (duration) => {
+                        handleSaveCallHistory("completed", duration).finally(() => router.back());
+                    },
+                    onError: () => router.back(),
+                }}
+            />
+        </View>
+    );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }
-});
+const styles = StyleSheet.create({ container: { flex: 1 } });
