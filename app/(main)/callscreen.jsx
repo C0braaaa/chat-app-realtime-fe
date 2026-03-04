@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/authContext";
 import * as ImagePicker from "expo-image-picker";
 import api from "@/utils/api";
 import Constants from "expo-constants";
+import { ZegoUIKitPrebuiltCallInCallScreen } from "@zegocloud/zego-uikit-prebuilt-call-rn";
 
 export default function CallScreen() {
   const { user } = useAuth();
@@ -20,10 +21,6 @@ export default function CallScreen() {
 
   const isVideoCall = type === "video";
   const isExpoGo = Constants.appOwnership === "expo";
-
-  const [ZegoUIKitPrebuiltCallInCallScreen, setZegoUIKitPrebuiltCallInCallScreen] =
-    useState(null);
-  const [zegoLoadFailed, setZegoLoadFailed] = useState(false);
 
   const [permissionReady, setPermissionReady] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -75,38 +72,7 @@ export default function CallScreen() {
     };
   }, []);
 
-  // 2. Load component Zego khi đã sẵn sàng (user, quyền, env, không chạy trên Expo Go)
-  useEffect(() => {
-    if (isExpoGo) return;
-    if (!user || !user._id) return;
-    if (!permissionReady) return;
-    if (!appId || !appSign) return;
-    if (ZegoUIKitPrebuiltCallInCallScreen || zegoLoadFailed) return;
-
-    try {
-      // dynamic require để tránh crash trên Expo Go / khi thiếu native
-      // eslint-disable-next-line global-require
-      const mod = require("@zegocloud/zego-uikit-prebuilt-call-rn");
-      const Comp = mod && mod.ZegoUIKitPrebuiltCallInCallScreen;
-      if (Comp) {
-        setZegoUIKitPrebuiltCallInCallScreen(() => Comp);
-      } else {
-        setZegoLoadFailed(true);
-      }
-    } catch {
-      setZegoLoadFailed(true);
-    }
-  }, [
-    isExpoGo,
-    user,
-    permissionReady,
-    appId,
-    appSign,
-    ZegoUIKitPrebuiltCallInCallScreen,
-    zegoLoadFailed,
-  ]);
-
-  // 3. Lưu lịch sử cuộc gọi sau khi kết thúc
+  // 2. Lưu lịch sử cuộc gọi sau khi kết thúc
   const handleSaveCallHistory = async () => {
     try {
       const messageContent = JSON.stringify({
@@ -186,22 +152,6 @@ export default function CallScreen() {
         <Text style={styles.fallbackText}>
           Bạn cần mở app bằng bản dev-client hoặc APK build từ EAS để dùng gọi
           điện/video.
-        </Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.fallbackLink}>Quay lại</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // Load module Zego thất bại
-  if (zegoLoadFailed || !ZegoUIKitPrebuiltCallInCallScreen) {
-    return (
-      <View style={styles.fallback}>
-        <Text style={styles.fallbackTitle}>Không thể tải Zego Call</Text>
-        <Text style={styles.fallbackText}>
-          Bản build hiện tại chưa nhúng đủ native modules của Zego hoặc load
-          module thất bại. Hãy build lại (dev-client hoặc APK) và cài bản mới.
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
