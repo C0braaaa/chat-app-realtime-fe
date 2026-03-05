@@ -1,23 +1,16 @@
 // Minimal no-op shim for `react-native-sound`.
-// This prevents runtime crashes when a dependency (e.g. Zego callkit) imports it,
-// while the app doesn't actually need to play local ringtone audio.
+// Zego Call Kit may import this for ringtone/callkit features.
+// We don't need local ringtone playback, so this prevents runtime crashes.
 
 class Sound {
   constructor(_filename, _basePath, onLoad) {
-    if (typeof _basePath === "function") {
-      // (filename, callback)
-      onLoad = _basePath;
-    }
-    if (typeof onLoad === "function") {
-      // match typical signature: callback(error)
-      onLoad(null);
-    }
+    if (typeof _basePath === "function") onLoad = _basePath;
+    if (typeof onLoad === "function") onLoad(null);
   }
 
   play(onEnd) {
     if (typeof onEnd === "function") onEnd(true);
   }
-
   pause() {}
   stop(cb) {
     if (typeof cb === "function") cb();
