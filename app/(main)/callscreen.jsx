@@ -13,11 +13,9 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/authContext";
 import api from "@/utils/api";
 
-// ✅ Import NavigationContainer riêng cho Zego
-import { NavigationContainer } from "@react-navigation/native";
-import { ZegoUIKitPrebuiltCallInCallScreen } from "@zegocloud/zego-uikit-prebuilt-call-rn";
+// ✅ KHÔNG import Zego ở top-level vì nó crash ngay lúc module load trong Expo Go
+// Thay vào đó dùng lazy require bên trong component
 
-// ✅ Dùng một prefix cố định để tránh lỗi 'prefix of null'
 const ZEGO_LINKING = {
   prefixes: ["cchat://"],
 };
@@ -33,8 +31,28 @@ const CallScreen = () => {
   const [permissionReady, setPermissionReady] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
+  // Lazy-loaded Zego components (chỉ load khi KHÔNG phải Expo Go)
+  const [ZegoComponent, setZegoComponent] = useState(null);
+  const [NavigationContainer, setNavigationContainer] = useState(null);
+
   const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
   const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
+
+  // Chỉ load Zego khi không phải Expo Go
+  useEffect(() => {
+    if (!isExpoGo) {
+      try {
+        const {
+          ZegoUIKitPrebuiltCallInCallScreen,
+        } = require("@zegocloud/zego-uikit-prebuilt-call-rn");
+        const { NavigationContainer: NC } = require("@react-navigation/native");
+        setZegoComponent(() => ZegoUIKitPrebuiltCallInCallScreen);
+        setNavigationContainer(() => NC);
+      } catch (e) {
+        console.log("Zego load error:", e);
+      }
+    }
+  }, [isExpoGo]);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,15 +134,7 @@ const CallScreen = () => {
     }
   };
 
-  // --- Các màn hình fallback ---
-  if (!user || !user._id) {
-    return (
-      <View style={styles.fallback}>
-        <Text style={styles.fallbackText}>Đang tải dữ liệu kết nối...</Text>
-      </View>
-    );
-  }
-
+  // --- Fallback: Expo Go ---
   if (isExpoGo) {
     return (
       <View style={styles.fallback}>
@@ -135,6 +145,14 @@ const CallScreen = () => {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!user || !user._id) {
+    return (
+      <View style={styles.fallback}>
+        <Text style={styles.fallbackText}>Đang tải dữ liệu kết nối...</Text>
       </View>
     );
   }
@@ -186,12 +204,19 @@ const CallScreen = () => {
     );
   }
 
-  // ✅ Wrap Zego trong NavigationContainer riêng với linking prefix cố định
-  // Đây là fix chính cho lỗi "Cannot read property 'prefix' of null"
+  // Chờ Zego load xong
+  if (!ZegoComponent || !NavigationContainer) {
+    return (
+      <View style={styles.fallback}>
+        <Text style={styles.fallbackText}>Đang tải module cuộc gọi...</Text>
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer independent={true} linking={ZEGO_LINKING}>
       <View style={styles.container}>
-        <ZegoUIKitPrebuiltCallInCallScreen
+        <ZegoComponent
           appID={appId}
           appSign={appSign}
           userID={String(user._id)}

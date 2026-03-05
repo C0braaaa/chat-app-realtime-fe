@@ -7,15 +7,6 @@ export default function MainLayout() {
       <Stack.Screen name="conversation" />
       <Stack.Screen name="newConversationModal" />
       <Stack.Screen name="profileModal" />
-      <Stack.Screen
-        name="callscreen"
-        options={{
-          headerShown: false,
-          animationEnabled: false,
-          gestureEnabled: false,
-          animation: "none",
-        }}
-      />
     </Stack>
   );
 }
