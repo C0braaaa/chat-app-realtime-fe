@@ -110,29 +110,26 @@ const CallScreen = () => {
       );
     }
   };
-  if (isExpoGo) {
-    return (
-      <View style={styles.fallback}>
-        <Typo color={colors.white} size={20} fontWeight="700">
-          Chế độ Expo Go
-        </Typo>
-        <Typo color={colors.neutral300}>
-          Tính năng gọi điện chỉ hoạt động trên bản APK thật.
-        </Typo>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ marginTop: 20 }}
-        >
-          <Typo color={colors.primary}>Quay lại</Typo>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
   if (!user || !user._id) {
     return (
       <View style={styles.fallback}>
         <Text style={styles.fallbackText}>Đang tải dữ liệu kết nối...</Text>
+      </View>
+    );
+  }
+
+  if (isExpoGo) {
+    return (
+      <View style={styles.fallback}>
+        <Text style={styles.fallbackTitle}>Call không chạy trên Expo Go</Text>
+        <Text style={styles.fallbackText}>
+          Bạn cần mở app bằng bản dev-client hoặc APK build từ EAS để dùng gọi
+          điện/video.
+        </Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Text style={styles.fallbackLink}>Quay lại</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -165,21 +162,6 @@ const CallScreen = () => {
         <Text style={styles.fallbackTitle}>Thiếu cấu hình Zego</Text>
         <Text style={styles.fallbackText}>
           Cần cấu hình EXPO_PUBLIC_APP_ID và EXPO_PUBLIC_APP_SIGN.
-        </Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.fallbackLink}>Quay lại</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (isExpoGo) {
-    return (
-      <View style={styles.fallback}>
-        <Text style={styles.fallbackTitle}>Call không chạy trên Expo Go</Text>
-        <Text style={styles.fallbackText}>
-          Bạn cần mở app bằng bản dev-client hoặc APK build từ EAS để dùng gọi
-          điện/video.
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>

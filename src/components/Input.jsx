@@ -7,8 +7,8 @@ import {
 } from "react-native";
 import { useState } from "react";
 import React from "react";
-import { colors, radius, spacingX, spacingY } from "constants/theme";
-import { verticalScale } from "utils/styling";
+import { colors, radius, spacingX, spacingY } from "@/constants/theme";
+import { verticalScale } from "@/utils/styling";
 import Typo from "./Typo";
 import { FontAwesome5 } from "@expo/vector-icons";
 

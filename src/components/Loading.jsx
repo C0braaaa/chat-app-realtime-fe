@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import React from "react";
-import { colors } from "constants/theme";
+import { colors } from "@/constants/theme";
 
 const Loading = ({ size = "large", color = colors.primaryDark }) => {
   return (

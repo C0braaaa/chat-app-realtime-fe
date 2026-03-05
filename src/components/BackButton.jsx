@@ -1,8 +1,8 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
 import { useRouter } from "expo-router";
-import { verticalScale } from "utils/styling";
-import { colors } from "constants/theme";
+import { verticalScale } from "@/utils/styling";
+import { colors } from "@/constants/theme";
 import { FontAwesome5 } from "@expo/vector-icons";
 
 const BackButton = ({ style, iconSize = 26, color = colors.white }) => {
