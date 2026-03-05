@@ -121,6 +121,16 @@ const conversation = () => {
   };
 
   const processMessage = (msg) => {
+    let isCall = false;
+    let callData = null;
+    try {
+      const parsed = JSON.parse(msg.content);
+      if (parsed.isCall) {
+        isCall = true;
+        callData = parsed.callData;
+      }
+    } catch (e) {}
+
     return {
       id: msg._id,
       content: msg.content,
@@ -128,6 +138,8 @@ const conversation = () => {
       createdAt: moment(msg.created_at || msg.createdAt).format("h:mm A"),
       isMe: msg.senderId?._id === user?._id,
       attachement: msg.attachement,
+      isCall,
+      callData,
     };
   };
 
@@ -191,7 +203,7 @@ const conversation = () => {
         );
         if (res.data.success) {
           const formattedMsgs = res.data.data.map(processMessage);
-          
+
           setMessages([...formattedMsgs]);
         }
       } catch (error) {
@@ -332,10 +344,32 @@ const conversation = () => {
             <>
               {!isGroup && (
                 <>
-                  <TouchableOpacity onPress={() => router.push({ pathname: "/(main)/callscreen", params: { callID: conversationId, type: "audio", receiverId: peerId } })}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(main)/callscreen",
+                        params: {
+                          callID: conversationId,
+                          type: "audio",
+                          receiverId: peerId,
+                        },
+                      })
+                    }
+                  >
                     <Ionicons name="call" size={24} color={colors.white} />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => router.push({ pathname: "/(main)/callscreen", params: { callID: conversationId, type: "video", receiverId: peerId } })}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(main)/callscreen",
+                        params: {
+                          callID: conversationId,
+                          type: "video",
+                          receiverId: peerId,
+                        },
+                      })
+                    }
+                  >
                     <Ionicons name="videocam" size={24} color={colors.white} />
                   </TouchableOpacity>
                 </>

@@ -14,7 +14,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/authContext";
 import api from "@/utils/api";
 
-export default function CallScreen() {
+const CallScreen = () => {
   const { user } = useAuth();
   const router = useRouter();
   const { callID, type, receiverId } = useLocalSearchParams();
@@ -104,9 +104,30 @@ export default function CallScreen() {
         senderId: user?._id,
       });
     } catch (error) {
-      console.log("Lỗi lưu call message:", error?.response?.data || error?.message);
+      console.log(
+        "Lỗi lưu call message:",
+        error?.response?.data || error?.message,
+      );
     }
   };
+  if (isExpoGo) {
+    return (
+      <View style={styles.fallback}>
+        <Typo color={colors.white} size={20} fontWeight="700">
+          Chế độ Expo Go
+        </Typo>
+        <Typo color={colors.neutral300}>
+          Tính năng gọi điện chỉ hoạt động trên bản APK thật.
+        </Typo>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ marginTop: 20 }}
+        >
+          <Typo color={colors.primary}>Quay lại</Typo>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (!user || !user._id) {
     return (
@@ -210,13 +231,30 @@ export default function CallScreen() {
       />
     </View>
   );
-}
+};
+
+export default CallScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  fallback: { flex: 1, padding: 20, justifyContent: "center", backgroundColor: "#000" },
-  fallbackTitle: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 8 },
-  fallbackText: { color: "#d4d4d4", fontSize: 14, lineHeight: 20, marginBottom: 16 },
+  fallback: {
+    flex: 1,
+    padding: 20,
+    justifyContent: "center",
+    backgroundColor: "#000",
+  },
+  fallbackTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  fallbackText: {
+    color: "#d4d4d4",
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
   fallbackLink: { color: "#60a5fa", fontSize: 15, fontWeight: "600" },
   backBtn: { alignSelf: "flex-start" },
 });

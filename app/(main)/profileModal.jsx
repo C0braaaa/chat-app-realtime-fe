@@ -210,9 +210,13 @@ const ProfileModal = () => {
           </Typo>
         </Button>
       </View>
-      <View style={{ alignItems: "center"}}>
-        <Typo color={colors.neutral400} fontWeight={"400"} style={{marginTop: spacingY._5}}>
-          v1.1.10
+      <View style={{ alignItems: "center" }}>
+        <Typo
+          color={colors.neutral400}
+          fontWeight={"400"}
+          style={{ marginTop: spacingY._5 }}
+        >
+          v1.1.12
         </Typo>
       </View>
     </ScreenWrapper>

@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
-    "postinstall": "node scripts/patch-zego-express-engine.js",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
@@ -43,8 +42,6 @@
     "react-native-svg": "14.1.0",
     "react-native-webview": "13.6.4",
     "socket.io-client": "^4.8.3",
-    "zego-express-engine-reactnative": "^3.22.0",
-    "zego-zim-react-native": "^2.27.0",
     "zod": "^4.3.6"
   },
   "private": true,

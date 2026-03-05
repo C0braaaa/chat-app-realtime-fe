@@ -3,7 +3,7 @@
     "name": "C Chat",
     "slug": "c-chat",
     "scheme": "c-chat",
-    "version": "1.1.10",
+    "version": "1.1.12",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
@@ -30,7 +30,9 @@
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "package": "com.cobraa.cchat",
-      "proguardRuleFiles": ["./proguard-rules.pro"],
+      "proguardRuleFiles": [
+        "./proguard-rules.pro"
+      ],
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -44,7 +46,8 @@
         "expo-build-properties",
         {
           "android": {
-            "kotlinVersion": "1.8.10"
+            "kotlinVersion": "1.8.10",
+            "extraMavenRepos": ["https://www.jitpack.io"]
           }
         }
       ]

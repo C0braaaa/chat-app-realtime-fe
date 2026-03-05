@@ -40,16 +40,30 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
   const isBotMessage = senderIdStr === BOT_ID;
   const shouldShowAvatarAndName = !isMe;
 
+  // --- LOGIC PARSE "BÓC VỎ" NHIỀU LỚP AN TOÀN NHẤT ---
   let isCallMessage = false;
   let callData = null;
 
   try {
-    const parsedContent = JSON.parse(item.content);
-    if (parsedContent.isCall && parsedContent.callData) {
+    let parsedContent = item.content;
+
+    // Bóc lớp chuỗi thứ nhất
+    if (typeof parsedContent === 'string') {
+      parsedContent = JSON.parse(parsedContent);
+    }
+    
+    // Bóc lớp chuỗi thứ hai (Bắt bệnh Double Stringify)
+    if (typeof parsedContent === 'string') {
+      parsedContent = JSON.parse(parsedContent);
+    }
+
+    // Đảm bảo dữ liệu bây giờ là Object thật sự
+    if (parsedContent && typeof parsedContent === 'object' && parsedContent.isCall) {
       isCallMessage = true;
       callData = parsedContent.callData;
     }
   } catch (e) {
+    // Nếu lỗi parse thì chắc chắn là tin nhắn text bình thường, không làm gì cả
   }
 
   const handleDelete = async () => {
@@ -78,9 +92,10 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
     const { type, status, duration } = callData;
     const isMissed = status === "missed" || status === "declined";
 
-    const callColor = isMissed ? colors.rose : (isMe ? colors.neutral600 : colors.primary);
+    // Jarvis sử dụng mã màu HEX #e11d48 thay cho colors.rose để loại bỏ hoàn toàn rủi ro thiếu biến theme
+    const callColor = isMissed ? "#e11d48" : (isMe ? colors.neutral600 : colors.primary);
     const textColor = isMe ? colors.neutral600 : colors.neutral900;
-    const subTextColor = isMissed ? colors.rose : (isMe ? colors.neutral500 : colors.neutral600);
+    const subTextColor = isMissed ? "#e11d48" : (isMe ? colors.neutral500 : colors.neutral600);
     const bgColor = isMissed ? "rgba(225, 29, 72, 0.1)" : "rgba(0, 0, 0, 0.05)";
 
     const title = type === "video" ? "Cuộc gọi video" : "Cuộc gọi thoại";
@@ -133,7 +148,7 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
         </View>
       </TouchableWithoutFeedback>
 
-      {/* Modal Menu giữ nguyên */}
+      {/* Modal Menu */}
       <Modal visible={showMenu} transparent={true} animationType="slide" onRequestClose={() => setShowMenu(false)}>
         <TouchableWithoutFeedback onPress={() => setShowMenu(false)}>
           <View style={styles.modalOverlay}>
