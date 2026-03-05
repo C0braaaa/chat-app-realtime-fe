@@ -216,7 +216,7 @@ const ProfileModal = () => {
           fontWeight={"400"}
           style={{ marginTop: spacingY._5 }}
         >
-          v1.1.13
+          v1.1.16
         </Typo>
       </View>
     </ScreenWrapper>

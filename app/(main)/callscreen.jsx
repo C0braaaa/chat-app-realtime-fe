@@ -9,15 +9,13 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Constants from "expo-constants";
+import * as Linking from "expo-linking";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/authContext";
 import api from "@/utils/api";
 
-// ✅ KHÔNG import Zego ở top-level vì nó crash ngay lúc module load trong Expo Go
-// Thay vào đó dùng lazy require bên trong component
-
 const ZEGO_LINKING = {
-  prefixes: ["cchat://"],
+  prefixes: [Linking.createURL("/")],
 };
 
 const CallScreen = () => {

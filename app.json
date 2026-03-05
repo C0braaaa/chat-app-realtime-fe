@@ -3,7 +3,7 @@
     "name": "C Chat",
     "slug": "c-chat",
     "scheme": "c-chat",
-    "version": "1.1.13",
+    "version": "1.1.16",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
@@ -47,7 +47,9 @@
         {
           "android": {
             "kotlinVersion": "1.8.10",
-            "extraMavenRepos": ["https://www.jitpack.io"]
+            "extraMavenRepos": [
+              "https://www.jitpack.io"
+            ]
           }
         }
       ]
@@ -57,9 +59,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "a09e60e3-8985-4d58-9ed2-4b17e75d5cd7"
+        "projectId": "34acc69d-5b9a-4b56-9f95-564df292cb74"
       }
     },
-    "owner": "alex4554"
+    "owner": "jackblue"
   }
 }
