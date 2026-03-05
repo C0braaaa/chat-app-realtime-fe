@@ -6,7 +6,7 @@ import {
   Dimensions, // 1. Phải import cái này để lấy chiều cao máy
 } from "react-native";
 import React from "react";
-import { colors } from "../constants/theme";
+import { colors } from "@/constants/theme";
 import { StatusBar } from "expo-status-bar";
 
 // Lấy chiều cao màn hình

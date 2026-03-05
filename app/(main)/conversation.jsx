@@ -347,7 +347,7 @@ const conversation = () => {
                   <TouchableOpacity
                     onPress={() =>
                       router.push({
-                        pathname: "/(main)/callscreen",
+                        pathname: "callscreen",
                         params: {
                           callID: conversationId,
                           type: "audio",
@@ -361,7 +361,7 @@ const conversation = () => {
                   <TouchableOpacity
                     onPress={() =>
                       router.push({
-                        pathname: "/(main)/callscreen",
+                        pathname: "callscreen",
                         params: {
                           callID: conversationId,
                           type: "video",
