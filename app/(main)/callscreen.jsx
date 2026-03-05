@@ -8,11 +8,19 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ZegoUIKitPrebuiltCallInCallScreen } from "@zegocloud/zego-uikit-prebuilt-call-rn";
 import Constants from "expo-constants";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/authContext";
 import api from "@/utils/api";
+
+// ✅ Import NavigationContainer riêng cho Zego
+import { NavigationContainer } from "@react-navigation/native";
+import { ZegoUIKitPrebuiltCallInCallScreen } from "@zegocloud/zego-uikit-prebuilt-call-rn";
+
+// ✅ Dùng một prefix cố định để tránh lỗi 'prefix of null'
+const ZEGO_LINKING = {
+  prefixes: ["cchat://"],
+};
 
 const CallScreen = () => {
   const { user } = useAuth();
@@ -54,7 +62,6 @@ const CallScreen = () => {
           if (!cancelled) setPermissionDenied(true);
         }
       } else {
-        // iOS: xin quyền camera (micro thường sẽ hỏi lần đầu khi mở call)
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (cancelled) return;
         if (status === "granted") {
@@ -72,7 +79,6 @@ const CallScreen = () => {
   }, []);
 
   const saveCallRecord = async ({ status, durationSeconds }) => {
-    // Lưu vào bảng calls (DB)
     if (!receiverId) return;
     try {
       await api.post("/calls", {
@@ -88,7 +94,6 @@ const CallScreen = () => {
   };
 
   const saveCallMessage = async ({ status, durationSeconds }) => {
-    // Lưu vào messages (để hiện trong chat) - optional nhưng hữu ích
     try {
       const messageContent = JSON.stringify({
         isCall: true,
@@ -111,6 +116,7 @@ const CallScreen = () => {
     }
   };
 
+  // --- Các màn hình fallback ---
   if (!user || !user._id) {
     return (
       <View style={styles.fallback}>
@@ -124,8 +130,7 @@ const CallScreen = () => {
       <View style={styles.fallback}>
         <Text style={styles.fallbackTitle}>Call không chạy trên Expo Go</Text>
         <Text style={styles.fallbackText}>
-          Bạn cần mở app bằng bản dev-client hoặc APK build từ EAS để dùng gọi
-          điện/video.
+          Bạn cần mở app bằng bản dev-client hoặc APK build từ EAS.
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
@@ -139,7 +144,7 @@ const CallScreen = () => {
       <View style={styles.fallback}>
         <Text style={styles.fallbackTitle}>Cần quyền Camera và Micro</Text>
         <Text style={styles.fallbackText}>
-          Vui lòng bật quyền Camera và Micro trong Cài đặt để gọi điện / video.
+          Vui lòng bật quyền trong Cài đặt để gọi điện / video.
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
@@ -174,7 +179,6 @@ const CallScreen = () => {
     return (
       <View style={styles.fallback}>
         <Text style={styles.fallbackTitle}>Thiếu thông tin cuộc gọi</Text>
-        <Text style={styles.fallbackText}>Không có callID.</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
         </TouchableOpacity>
@@ -182,36 +186,40 @@ const CallScreen = () => {
     );
   }
 
+  // ✅ Wrap Zego trong NavigationContainer riêng với linking prefix cố định
+  // Đây là fix chính cho lỗi "Cannot read property 'prefix' of null"
   return (
-    <View style={styles.container}>
-      <ZegoUIKitPrebuiltCallInCallScreen
-        appID={appId}
-        appSign={appSign}
-        userID={String(user._id)}
-        userName={String(user.name || "User")}
-        callID={String(callID)}
-        config={{
-          turnOnCameraWhenJoining: isVideoCall,
-          useSpeakerWhenJoining: isVideoCall,
-          onHangUp: (duration) => {
-            const durationSeconds =
-              typeof duration === "number" && Number.isFinite(duration)
-                ? Math.max(0, Math.floor(duration))
-                : 0;
-            Promise.all([
-              saveCallRecord({ status: "completed", durationSeconds }),
-              saveCallMessage({ status: "completed", durationSeconds }),
-            ]).finally(() => router.back());
-          },
-          onError: () => {
-            Promise.all([
-              saveCallRecord({ status: "missed", durationSeconds: 0 }),
-              saveCallMessage({ status: "missed", durationSeconds: 0 }),
-            ]).finally(() => router.back());
-          },
-        }}
-      />
-    </View>
+    <NavigationContainer independent={true} linking={ZEGO_LINKING}>
+      <View style={styles.container}>
+        <ZegoUIKitPrebuiltCallInCallScreen
+          appID={appId}
+          appSign={appSign}
+          userID={String(user._id)}
+          userName={String(user.name || "User")}
+          callID={String(callID)}
+          config={{
+            turnOnCameraWhenJoining: isVideoCall,
+            useSpeakerWhenJoining: isVideoCall,
+            onHangUp: (duration) => {
+              const durationSeconds =
+                typeof duration === "number" && Number.isFinite(duration)
+                  ? Math.max(0, Math.floor(duration))
+                  : 0;
+              Promise.all([
+                saveCallRecord({ status: "completed", durationSeconds }),
+                saveCallMessage({ status: "completed", durationSeconds }),
+              ]).finally(() => router.back());
+            },
+            onError: () => {
+              Promise.all([
+                saveCallRecord({ status: "missed", durationSeconds: 0 }),
+                saveCallMessage({ status: "missed", durationSeconds: 0 }),
+              ]).finally(() => router.back());
+            },
+          }}
+        />
+      </View>
+    </NavigationContainer>
   );
 };
 
