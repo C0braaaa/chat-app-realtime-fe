@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Platform,
   PermissionsAndroid,
@@ -13,10 +13,6 @@ import * as Linking from "expo-linking";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/authContext";
 import api from "@/utils/api";
-
-const ZEGO_LINKING = {
-  prefixes: [Linking.createURL("/")],
-};
 
 const CallScreen = () => {
   const { user } = useAuth();
@@ -35,6 +31,13 @@ const CallScreen = () => {
 
   const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
   const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
+
+  const ZEGO_LINKING = useMemo(
+    () => ({
+      prefixes: [Linking.createURL("/")],
+    }),
+    [],
+  );
 
   // Chỉ load Zego khi không phải Expo Go
   useEffect(() => {
