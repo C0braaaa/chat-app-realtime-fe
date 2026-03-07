@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Constants from "expo-constants";
-import * as Linking from "expo-linking";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/authContext";
 import api from "@/utils/api";
@@ -27,17 +26,9 @@ const CallScreen = () => {
 
   // Lazy-loaded Zego components (chỉ load khi KHÔNG phải Expo Go)
   const [ZegoComponent, setZegoComponent] = useState(null);
-  const [NavigationContainer, setNavigationContainer] = useState(null);
 
   const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
   const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
-
-  const ZEGO_LINKING = useMemo(
-    () => ({
-      prefixes: [Linking.createURL("/")],
-    }),
-    [],
-  );
 
   // Chỉ load Zego khi không phải Expo Go
   useEffect(() => {
@@ -46,9 +37,7 @@ const CallScreen = () => {
         const {
           ZegoUIKitPrebuiltCallInCallScreen,
         } = require("@zegocloud/zego-uikit-prebuilt-call-rn");
-        const { NavigationContainer: NC } = require("@react-navigation/native");
         setZegoComponent(() => ZegoUIKitPrebuiltCallInCallScreen);
-        setNavigationContainer(() => NC);
       } catch (e) {
         console.log("Zego load error:", e);
       }
@@ -206,7 +195,7 @@ const CallScreen = () => {
   }
 
   // Chờ Zego load xong
-  if (!ZegoComponent || !NavigationContainer) {
+  if (!ZegoComponent) {
     return (
       <View style={styles.fallback}>
         <Text style={styles.fallbackText}>Đang tải module cuộc gọi...</Text>
@@ -215,37 +204,35 @@ const CallScreen = () => {
   }
 
   return (
-    <NavigationContainer independent={true} linking={ZEGO_LINKING}>
-      <View style={styles.container}>
-        <ZegoComponent
-          appID={appId}
-          appSign={appSign}
-          userID={String(user._id)}
-          userName={String(user.name || "User")}
-          callID={String(callID)}
-          config={{
-            turnOnCameraWhenJoining: isVideoCall,
-            useSpeakerWhenJoining: isVideoCall,
-            onHangUp: (duration) => {
-              const durationSeconds =
-                typeof duration === "number" && Number.isFinite(duration)
-                  ? Math.max(0, Math.floor(duration))
-                  : 0;
-              Promise.all([
-                saveCallRecord({ status: "completed", durationSeconds }),
-                saveCallMessage({ status: "completed", durationSeconds }),
-              ]).finally(() => router.back());
-            },
-            onError: () => {
-              Promise.all([
-                saveCallRecord({ status: "missed", durationSeconds: 0 }),
-                saveCallMessage({ status: "missed", durationSeconds: 0 }),
-              ]).finally(() => router.back());
-            },
-          }}
-        />
-      </View>
-    </NavigationContainer>
+    <View style={styles.container}>
+      <ZegoComponent
+        appID={appId}
+        appSign={appSign}
+        userID={String(user._id)}
+        userName={String(user.name || "User")}
+        callID={String(callID)}
+        config={{
+          turnOnCameraWhenJoining: isVideoCall,
+          useSpeakerWhenJoining: isVideoCall,
+          onHangUp: (duration) => {
+            const durationSeconds =
+              typeof duration === "number" && Number.isFinite(duration)
+                ? Math.max(0, Math.floor(duration))
+                : 0;
+            Promise.all([
+              saveCallRecord({ status: "completed", durationSeconds }),
+              saveCallMessage({ status: "completed", durationSeconds }),
+            ]).finally(() => router.back());
+          },
+          onError: () => {
+            Promise.all([
+              saveCallRecord({ status: "missed", durationSeconds: 0 }),
+              saveCallMessage({ status: "missed", durationSeconds: 0 }),
+            ]).finally(() => router.back());
+          },
+        }}
+      />
+    </View>
   );
 };
 
