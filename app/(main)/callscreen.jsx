@@ -23,6 +23,7 @@ const CallScreen = () => {
 
   const [permissionReady, setPermissionReady] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [zegoReady, setZegoReady] = useState(false);
   const [ZegoComponent, setZegoComponent] = useState(null);
   const [NavContainer, setNavContainer] = useState(null);
   const [StackNav, setStackNav] = useState(null);
@@ -30,22 +31,41 @@ const CallScreen = () => {
   const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
   const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
 
+  // Load Zego + init service trước khi render
   useEffect(() => {
-    if (!isExpoGo) {
+    if (!isExpoGo && appId && appSign && user?._id) {
       try {
         const zegoModule = require("@zegocloud/zego-uikit-prebuilt-call-rn");
         const { NavigationContainer } = require("@react-navigation/native");
         const {
           createNativeStackNavigator,
         } = require("@react-navigation/native-stack");
-        setZegoComponent(() => zegoModule.ZegoUIKitPrebuiltCall);
-        setNavContainer(() => NavigationContainer);
-        setStackNav(() => createNativeStackNavigator());
+
+        const service = zegoModule.default; // ZegoUIKitPrebuiltCallService instance
+
+        // Init service trước
+        service
+          .init(
+            appId,
+            appSign,
+            String(user._id),
+            String(user.name || "User"),
+            [],
+          )
+          .then(() => {
+            setZegoComponent(() => zegoModule.ZegoUIKitPrebuiltCall);
+            setNavContainer(() => NavigationContainer);
+            setStackNav(() => createNativeStackNavigator());
+            setZegoReady(true);
+          })
+          .catch((e) => {
+            console.log("Zego init error:", e);
+          });
       } catch (e) {
         console.log("Zego load error:", e);
       }
     }
-  }, [isExpoGo]);
+  }, [isExpoGo, appId, appSign, user?._id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,10 +207,10 @@ const CallScreen = () => {
     );
   }
 
-  if (!ZegoComponent || !NavContainer || !StackNav) {
+  if (!zegoReady || !ZegoComponent || !NavContainer || !StackNav) {
     return (
       <View style={styles.fallback}>
-        <Text style={styles.fallbackText}>Đang tải module cuộc gọi...</Text>
+        <Text style={styles.fallbackText}>Đang khởi tạo cuộc gọi...</Text>
       </View>
     );
   }

@@ -30,7 +30,29 @@ const ConversationItem = ({ item, router, showDivider, currentUser }) => {
 
   const getLastMessageContent = () => {
     if (!lastMessage) return "Say hi 👋";
-    return lastMessage?.attachement ? "Image" : lastMessage?.content;
+    if (lastMessage?.attachement) return "Image";
+
+    // Parse call message
+    try {
+      let parsedContent = lastMessage?.content;
+      if (typeof parsedContent === "string") {
+        parsedContent = JSON.parse(parsedContent);
+      }
+      if (typeof parsedContent === "string") {
+        parsedContent = JSON.parse(parsedContent);
+      }
+      if (parsedContent?.isCall) {
+        const type =
+          parsedContent.callData?.type === "video" ? "video" : "thoại";
+        const status =
+          parsedContent.callData?.status === "missed" ? " (nhỡ)" : "";
+        return `📞 Cuộc gọi ${type}${status}`;
+      }
+    } catch (e) {
+      // Not a call message, continue
+    }
+
+    return lastMessage?.content;
   };
 
   const getLastMessageDate = () => {
