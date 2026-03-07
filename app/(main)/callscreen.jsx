@@ -24,18 +24,23 @@ const CallScreen = () => {
   const [permissionReady, setPermissionReady] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [ZegoComponent, setZegoComponent] = useState(null);
+  const [NavContainer, setNavContainer] = useState(null);
+  const [StackNav, setStackNav] = useState(null);
 
   const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
   const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
 
-  // Load ZegoUIKitPrebuiltCall (không cần Navigator)
   useEffect(() => {
     if (!isExpoGo) {
       try {
+        const zegoModule = require("@zegocloud/zego-uikit-prebuilt-call-rn");
+        const { NavigationContainer } = require("@react-navigation/native");
         const {
-          ZegoUIKitPrebuiltCall,
-        } = require("@zegocloud/zego-uikit-prebuilt-call-rn");
-        setZegoComponent(() => ZegoUIKitPrebuiltCall);
+          createNativeStackNavigator,
+        } = require("@react-navigation/native-stack");
+        setZegoComponent(() => zegoModule.ZegoUIKitPrebuiltCall);
+        setNavContainer(() => NavigationContainer);
+        setStackNav(() => createNativeStackNavigator());
       } catch (e) {
         console.log("Zego load error:", e);
       }
@@ -112,17 +117,6 @@ const CallScreen = () => {
     }
   };
 
-  const handleHangUp = (duration) => {
-    const durationSeconds =
-      typeof duration === "number" && Number.isFinite(duration)
-        ? Math.max(0, Math.floor(duration))
-        : 0;
-    Promise.all([
-      saveCallRecord({ status: "completed", durationSeconds }),
-      saveCallMessage({ status: "completed", durationSeconds }),
-    ]).finally(() => router.back());
-  };
-
   // --- Fallbacks ---
   if (isExpoGo) {
     return (
@@ -193,7 +187,7 @@ const CallScreen = () => {
     );
   }
 
-  if (!ZegoComponent) {
+  if (!ZegoComponent || !NavContainer || !StackNav) {
     return (
       <View style={styles.fallback}>
         <Text style={styles.fallbackText}>Đang tải module cuộc gọi...</Text>
@@ -201,27 +195,33 @@ const CallScreen = () => {
     );
   }
 
+  const ZegoScreen = () => (
+    <ZegoComponent
+      appID={appId}
+      appSign={appSign}
+      userID={String(user._id)}
+      userName={String(user.name || "User")}
+      callID={String(callID)}
+      config={{
+        turnOnCameraWhenJoining: isVideoCall,
+        useSpeakerWhenJoining: isVideoCall,
+        onCallEnd: (cid, reason, duration) => {
+          const durationSeconds = Math.max(0, Math.floor(duration || 0));
+          Promise.all([
+            saveCallRecord({ status: "completed", durationSeconds }),
+            saveCallMessage({ status: "completed", durationSeconds }),
+          ]).finally(() => router.back());
+        },
+      }}
+    />
+  );
+
   return (
-    <View style={styles.container}>
-      <ZegoComponent
-        appID={appId}
-        appSign={appSign}
-        userID={String(user._id)}
-        userName={String(user.name || "User")}
-        callID={String(callID)}
-        config={{
-          turnOnCameraWhenJoining: isVideoCall,
-          useSpeakerWhenJoining: isVideoCall,
-          onHangUp: handleHangUp,
-          onError: () => {
-            Promise.all([
-              saveCallRecord({ status: "missed", durationSeconds: 0 }),
-              saveCallMessage({ status: "missed", durationSeconds: 0 }),
-            ]).finally(() => router.back());
-          },
-        }}
-      />
-    </View>
+    <NavContainer independent={true}>
+      <StackNav.Navigator screenOptions={{ headerShown: false }}>
+        <StackNav.Screen name="ZegoCall" component={ZegoScreen} />
+      </StackNav.Navigator>
+    </NavContainer>
   );
 };
 
