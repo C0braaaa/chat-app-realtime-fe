@@ -9,10 +9,18 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ID": "682284813",
+        "EXPO_PUBLIC_APP_SIGN": "b41af788c9e627ba9d8e99120844b5e698fe9c3939dc52de08edb0b5670f253f"
+      }
     },
     "production": {
       "autoIncrement": true,
+       "env": {
+        "EXPO_PUBLIC_APP_ID": "682284813",
+        "EXPO_PUBLIC_APP_SIGN": "b41af788c9e627ba9d8e99120844b5e698fe9c3939dc52de08edb0b5670f253f"
+      },
       "android": {
         "buildType": "app-bundle"
       }
