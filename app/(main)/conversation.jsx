@@ -350,6 +350,7 @@ const conversation = () => {
                         receiverId: peerId,
                         callType: "audio",
                         callerInfo: { name: user?.name, avatar: user?.avatar },
+                        conversationId: conversationId,
                       });
                       router.push({
                         pathname: "callscreen",
@@ -369,6 +370,7 @@ const conversation = () => {
                         receiverId: peerId,
                         callType: "video",
                         callerInfo: { name: user?.name, avatar: user?.avatar },
+                        conversationId: conversationId,
                       });
 
                       router.push({

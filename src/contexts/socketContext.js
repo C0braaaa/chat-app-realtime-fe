@@ -32,21 +32,22 @@ export const SocketProvider = ({ children }) => {
         transports: ["websocket"],
       });
 
-      // Lắng nghe cuộc gọi đến → điều hướng sang màn IncomingCall
-      s.on("incoming_call", ({ callerId, callerInfo, callType, offer }) => {
-        router.push({
-          pathname: "/(main)/incomingCall",
-          params: {
-            callerId,
-            callerName: callerInfo?.name || "Ai đó",
-            callerAvatar: callerInfo?.avatar || "",
-            callType,
-            // offer sẽ dùng nếu bạn implement WebRTC thuần,
-            // với Zego thì bạn chỉ cần callerId để join room
-            conversationId: callerId, // Zego dùng callID, tạm dùng callerId
-          },
-        });
-      });
+      // ✅ Nhận đúng conversationId do người gọi truyền sang
+      s.on(
+        "incoming_call",
+        ({ callerId, callerInfo, callType, conversationId }) => {
+          router.push({
+            pathname: "/(main)/incomingCall",
+            params: {
+              callerId,
+              callerName: callerInfo?.name || "Ai đó",
+              callerAvatar: callerInfo?.avatar || "",
+              callType,
+              conversationId,
+            },
+          });
+        },
+      );
 
       s.on("call_ended", () => {
         // Nếu đang ở màn incomingCall mà bên kia cancel
