@@ -345,7 +345,12 @@ const conversation = () => {
               {!isGroup && (
                 <>
                   <TouchableOpacity
-                    onPress={() =>
+                    onPress={() => {
+                      socketRef.current?.emit("call_user", {
+                        receiverId: peerId,
+                        callType: "audio",
+                        callerInfo: { name: user?.name, avatar: user?.avatar },
+                      });
                       router.push({
                         pathname: "callscreen",
                         params: {
@@ -353,13 +358,19 @@ const conversation = () => {
                           type: "audio",
                           receiverId: peerId,
                         },
-                      })
-                    }
+                      });
+                    }}
                   >
                     <Ionicons name="call" size={24} color={colors.white} />
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() =>
+                    onPress={() => {
+                      socketRef.current?.emit("call_user", {
+                        receiverId: peerId,
+                        callType: "video",
+                        callerInfo: { name: user?.name, avatar: user?.avatar },
+                      });
+
                       router.push({
                         pathname: "callscreen",
                         params: {
@@ -367,8 +378,8 @@ const conversation = () => {
                           type: "video",
                           receiverId: peerId,
                         },
-                      })
-                    }
+                      });
+                    }}
                   >
                     <Ionicons name="videocam" size={24} color={colors.white} />
                   </TouchableOpacity>
@@ -389,7 +400,6 @@ const conversation = () => {
           animationType="fade"
           onRequestClose={() => setShowHeaderMenu(false)}
         >
-          {/* Chạm ra ngoài để đóng menu */}
           <TouchableWithoutFeedback onPress={() => setShowHeaderMenu(false)}>
             <View style={styles.modalOverlay}>
               <TouchableWithoutFeedback>

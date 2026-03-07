@@ -57,11 +57,7 @@
     "extra": {
       "router": {
         "origin": false
-      },
-      "eas": {
-        "projectId": "34acc69d-5b9a-4b56-9f95-564df292cb74"
       }
-    },
-    "owner": "jackblue"
+    }
   }
 }

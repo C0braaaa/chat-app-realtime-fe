@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import { AuthProvider, useAuth } from "@/contexts/authContext";
+import { SocketProvider } from "@/contexts/socketContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -101,7 +102,9 @@ const MainLayout = () => {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <MainLayout />
+      <SocketProvider>
+        <MainLayout />
+      </SocketProvider>
     </AuthProvider>
   );
 }
