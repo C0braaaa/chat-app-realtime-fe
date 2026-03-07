@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Platform,
   PermissionsAndroid,
@@ -23,21 +23,19 @@ const CallScreen = () => {
 
   const [permissionReady, setPermissionReady] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
-
-  // Lazy-loaded Zego components (chỉ load khi KHÔNG phải Expo Go)
   const [ZegoComponent, setZegoComponent] = useState(null);
 
   const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
   const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
 
-  // Chỉ load Zego khi không phải Expo Go
+  // Load ZegoUIKitPrebuiltCall (không cần Navigator)
   useEffect(() => {
     if (!isExpoGo) {
       try {
         const {
-          ZegoUIKitPrebuiltCallInCallScreen,
+          ZegoUIKitPrebuiltCall,
         } = require("@zegocloud/zego-uikit-prebuilt-call-rn");
-        setZegoComponent(() => ZegoUIKitPrebuiltCallInCallScreen);
+        setZegoComponent(() => ZegoUIKitPrebuiltCall);
       } catch (e) {
         console.log("Zego load error:", e);
       }
@@ -46,7 +44,6 @@ const CallScreen = () => {
 
   useEffect(() => {
     let cancelled = false;
-
     const requestPermissions = async () => {
       if (Platform.OS === "android") {
         try {
@@ -55,31 +52,22 @@ const CallScreen = () => {
             PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           ]);
           if (cancelled) return;
-
           const cameraOk =
             granted[PermissionsAndroid.PERMISSIONS.CAMERA] === "granted";
           const micOk =
             granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === "granted";
-
-          if (cameraOk && micOk) {
-            setPermissionReady(true);
-          } else {
-            setPermissionDenied(true);
-          }
+          if (cameraOk && micOk) setPermissionReady(true);
+          else setPermissionDenied(true);
         } catch {
           if (!cancelled) setPermissionDenied(true);
         }
       } else {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (cancelled) return;
-        if (status === "granted") {
-          setPermissionReady(true);
-        } else {
-          setPermissionDenied(true);
-        }
+        if (status === "granted") setPermissionReady(true);
+        else setPermissionDenied(true);
       }
     };
-
     requestPermissions();
     return () => {
       cancelled = true;
@@ -124,7 +112,18 @@ const CallScreen = () => {
     }
   };
 
-  // --- Fallback: Expo Go ---
+  const handleHangUp = (duration) => {
+    const durationSeconds =
+      typeof duration === "number" && Number.isFinite(duration)
+        ? Math.max(0, Math.floor(duration))
+        : 0;
+    Promise.all([
+      saveCallRecord({ status: "completed", durationSeconds }),
+      saveCallMessage({ status: "completed", durationSeconds }),
+    ]).finally(() => router.back());
+  };
+
+  // --- Fallbacks ---
   if (isExpoGo) {
     return (
       <View style={styles.fallback}>
@@ -194,7 +193,6 @@ const CallScreen = () => {
     );
   }
 
-  // Chờ Zego load xong
   if (!ZegoComponent) {
     return (
       <View style={styles.fallback}>
@@ -214,16 +212,7 @@ const CallScreen = () => {
         config={{
           turnOnCameraWhenJoining: isVideoCall,
           useSpeakerWhenJoining: isVideoCall,
-          onHangUp: (duration) => {
-            const durationSeconds =
-              typeof duration === "number" && Number.isFinite(duration)
-                ? Math.max(0, Math.floor(duration))
-                : 0;
-            Promise.all([
-              saveCallRecord({ status: "completed", durationSeconds }),
-              saveCallMessage({ status: "completed", durationSeconds }),
-            ]).finally(() => router.back());
-          },
+          onHangUp: handleHangUp,
           onError: () => {
             Promise.all([
               saveCallRecord({ status: "missed", durationSeconds: 0 }),
