@@ -21,7 +21,6 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error),
 );
-// qhuvpmzsdjneqfov
 // 2. Interceptor NHẬN VỀ (Response): Tự động bắt lỗi Token hết hạn (401)
 api.interceptors.response.use(
   (response) => response, // Nếu thành công thì cho qua
