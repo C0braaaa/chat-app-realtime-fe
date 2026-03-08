@@ -358,6 +358,7 @@ const conversation = () => {
                           callID: conversationId,
                           type: "audio",
                           receiverId: peerId,
+                          isIncoming: "false",
                         },
                       });
                     }}
@@ -372,13 +373,13 @@ const conversation = () => {
                         callerInfo: { name: user?.name, avatar: user?.avatar },
                         conversationId: conversationId,
                       });
-
                       router.push({
                         pathname: "callscreen",
                         params: {
                           callID: conversationId,
                           type: "video",
                           receiverId: peerId,
+                          isIncoming: "false",
                         },
                       });
                     }}

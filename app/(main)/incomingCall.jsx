@@ -29,6 +29,7 @@ const IncomingCallScreen = () => {
         callID: conversationId,
         type: callType,
         receiverId: callerId,
+        isIncoming: "true",
       },
     });
   };
