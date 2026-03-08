@@ -7,8 +7,6 @@ export default function MainLayout() {
       <Stack.Screen name="conversation" />
       <Stack.Screen name="newConversationModal" />
       <Stack.Screen name="profileModal" />
-      <Stack.Screen name="callscreen" />
-      <Stack.Screen name="incomingCall" />
     </Stack>
   );
 }

@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import { io } from "socket.io-client";
 import * as SecureStore from "expo-secure-store";
-import { useRouter } from "expo-router";
 import { useAuth } from "./authContext";
 
 const SOCKET_URL = "https://cchat-be.onrender.com";
@@ -16,7 +15,6 @@ const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
-  const router = useRouter();
   const socketRef = useRef(null);
   const [socket, setSocket] = useState(null);
 
@@ -30,33 +28,6 @@ export const SocketProvider = ({ children }) => {
       const s = io(SOCKET_URL, {
         auth: { token },
         transports: ["websocket"],
-      });
-
-      // ✅ Nhận đúng conversationId do người gọi truyền sang
-      s.on(
-        "incoming_call",
-        ({ callerId, callerInfo, callType, conversationId }) => {
-          console.log("incoming_call received:", {
-            callerId,
-            callType,
-            conversationId,
-          });
-          router.push({
-            pathname: "/(main)/incomingCall",
-            params: {
-              callerId,
-              callerName: callerInfo?.name || "Ai đó",
-              callerAvatar: callerInfo?.avatar || "",
-              callType,
-              conversationId,
-            },
-          });
-        },
-      );
-
-      s.on("call_ended", () => {
-        // Nếu đang ở màn incomingCall mà bên kia cancel
-        router.canGoBack() && router.back();
       });
 
       socketRef.current = s;

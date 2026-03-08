@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import React from "react";
 import moment from "moment";
 
@@ -8,18 +8,12 @@ import Typo from "./Typo";
 
 const ConversationItem = ({ item, router, showDivider, currentUser }) => {
   const lastMessage = item.lastMessage;
-  const isDirect = item.type === "direct";
 
   const getDisplayInfo = () => {
     if (item.type === "group") {
-      return {
-        name: item.name,
-        avatar: item.avatar,
-        peerId: null,
-      };
+      return { name: item.name, avatar: item.avatar, peerId: null };
     }
     const otherUser = item.participants.find((p) => p._id !== currentUser?._id);
-
     return {
       name: otherUser?.name || "Unknown User",
       avatar: otherUser?.avatar || null,
@@ -31,27 +25,6 @@ const ConversationItem = ({ item, router, showDivider, currentUser }) => {
   const getLastMessageContent = () => {
     if (!lastMessage) return "Say hi 👋";
     if (lastMessage?.attachement) return "Image";
-
-    // Parse call message
-    try {
-      let parsedContent = lastMessage?.content;
-      if (typeof parsedContent === "string") {
-        parsedContent = JSON.parse(parsedContent);
-      }
-      if (typeof parsedContent === "string") {
-        parsedContent = JSON.parse(parsedContent);
-      }
-      if (parsedContent?.isCall) {
-        const type =
-          parsedContent.callData?.type === "video" ? "video" : "thoại";
-        const status =
-          parsedContent.callData?.status === "missed" ? " (nhỡ)" : "";
-        return `📞 Cuộc gọi ${type}${status}`;
-      }
-    } catch (e) {
-      // Not a call message, continue
-    }
-
     return lastMessage?.content;
   };
 
@@ -60,20 +33,15 @@ const ConversationItem = ({ item, router, showDivider, currentUser }) => {
       lastMessage?.updatedAt ||
       lastMessage?.created_at ||
       lastMessage?.createdAt;
-
     if (!dateString) return null;
 
     const messageDate = moment(dateString);
     const today = moment();
-    if (messageDate.isSame(today, "day")) {
-      return messageDate.format("h:mm A");
-    }
-    if (messageDate.isSame(today, "year")) {
-      return messageDate.format("MMM D");
-    }
-
+    if (messageDate.isSame(today, "day")) return messageDate.format("h:mm A");
+    if (messageDate.isSame(today, "year")) return messageDate.format("MMM D");
     return messageDate.format("MMM D, YYYY");
   };
+
   return (
     <View>
       <TouchableOpacity
@@ -83,17 +51,15 @@ const ConversationItem = ({ item, router, showDivider, currentUser }) => {
             pathname: "/(main)/conversation",
             params: {
               conversationId: item._id,
-              name: name,
-              avatar: avatar,
+              name,
+              avatar,
               type: item.type,
-              peerId: peerId,
+              peerId,
             },
           })
         }
       >
-        <View>
-          <Avatar uri={avatar} size={47} isGroup={item.type === "group"} />
-        </View>
+        <Avatar uri={avatar} size={47} isGroup={item.type === "group"} />
         <View style={{ flex: 1 }}>
           <View style={styles.row}>
             <Typo size={17} fontWeight={"600"}>

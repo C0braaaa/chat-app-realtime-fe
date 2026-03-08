@@ -13,22 +13,13 @@
       "backgroundColor": "#1c1917"
     },
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "NSCameraUsageDescription": "Cho phép C Chat truy cập Camera.",
-        "NSMicrophoneUsageDescription": "Cho phép C Chat truy cập Micro."
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
-      ],
       "package": "com.cobraa.cchat",
       "proguardRuleFiles": [
         "./proguard-rules.pro"
@@ -41,18 +32,7 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-font",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "kotlinVersion": "1.8.10",
-            "extraMavenRepos": [
-              "https://www.jitpack.io"
-            ]
-          }
-        }
-      ]
+      "expo-font"
     ],
     "extra": {
       "router": {
