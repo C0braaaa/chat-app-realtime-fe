@@ -6,20 +6,24 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+       "env": {
+        "EXPO_PUBLIC_APP_ID": "1889619313",
+        "EXPO_PUBLIC_APP_SIGN": "7d7b141a6356ac2fac46fca5deb12cc8a4de41fa04b6f9a55cf55d95f2e8b043"
+      }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_APP_ID": "682284813",
-        "EXPO_PUBLIC_APP_SIGN": "b41af788c9e627ba9d8e99120844b5e698fe9c3939dc52de08edb0b5670f253f"
+        "EXPO_PUBLIC_APP_ID": "1889619313",
+        "EXPO_PUBLIC_APP_SIGN": "7d7b141a6356ac2fac46fca5deb12cc8a4de41fa04b6f9a55cf55d95f2e8b043"
       }
     },
     "production": {
       "autoIncrement": true,
        "env": {
-        "EXPO_PUBLIC_APP_ID": "682284813",
-        "EXPO_PUBLIC_APP_SIGN": "b41af788c9e627ba9d8e99120844b5e698fe9c3939dc52de08edb0b5670f253f"
+        "EXPO_PUBLIC_APP_ID": "1889619313",
+        "EXPO_PUBLIC_APP_SIGN": "7d7b141a6356ac2fac46fca5deb12cc8a4de41fa04b6f9a55cf55d95f2e8b043"
       },
       "android": {
         "buildType": "app-bundle"

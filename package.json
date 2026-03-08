@@ -17,6 +17,7 @@
     "@react-navigation/native-stack": "^6.11.0",
     "@zegocloud/zego-uikit-prebuilt-call-rn": "^6.6.8",
     "@zegocloud/zego-uikit-rn": "^2.19.2",
+    "zego-zim-react-native": "^2.27.0",
     "axios": "^1.6.8",
     "expo": "~50.0.14",
     "expo-build-properties": "~0.11.1",

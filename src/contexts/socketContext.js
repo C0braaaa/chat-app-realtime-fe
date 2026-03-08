@@ -36,6 +36,11 @@ export const SocketProvider = ({ children }) => {
       s.on(
         "incoming_call",
         ({ callerId, callerInfo, callType, conversationId }) => {
+          console.log("incoming_call received:", {
+            callerId,
+            callType,
+            conversationId,
+          });
           router.push({
             pathname: "/(main)/incomingCall",
             params: {

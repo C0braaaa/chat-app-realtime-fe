@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Platform,
   PermissionsAndroid,
@@ -9,14 +9,64 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Constants from "expo-constants";
-import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/authContext";
 import api from "@/utils/api";
+import CallingLoadingScreen from "@/components/CallingLoadingScreen";
+import { fa } from "zod/v4/locales";
+
+// ─── Singleton: chỉ init 1 lần duy nhất trong toàn bộ app lifecycle ───
+let zegoInitialized = false;
+let zegoInitPromise = null;
+
+const initZegoOnce = (appId, appSign, userId, userName) => {
+  if (zegoInitPromise) return zegoInitPromise;
+
+  zegoInitPromise = new Promise((resolve, reject) => {
+    try {
+      // Nếu đã init rồi, resolve ngay
+      if (zegoInitialized) {
+        resolve();
+        return;
+      }
+
+      const zegoModule = require("@zegocloud/zego-uikit-prebuilt-call-rn");
+      const ZIM = require("zego-zim-react-native");
+      const service = zegoModule.default;
+
+      service
+        .init(appId, appSign, String(userId), String(userName), [ZIM])
+        .then(() => {
+          zegoInitialized = true;
+          resolve();
+        })
+        .catch((e) => {
+          zegoInitPromise = null; // reset để thử lại
+          reject(e);
+        });
+    } catch (e) {
+      zegoInitPromise = null;
+      reject(e);
+    }
+  });
+
+  return zegoInitPromise;
+};
 
 const CallScreen = () => {
   const { user } = useAuth();
   const router = useRouter();
   const { callID, type, receiverId } = useLocalSearchParams();
+
+  const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
+  const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
+
+  console.log("=== ZEGO RENDER ===", {
+    appId,
+    appSign: appSign ? "có" : "không",
+    userID: String(user._id),
+    callID: String(callID),
+    type,
+  });
 
   const isVideoCall = type === "video";
   const isExpoGo = Constants.appOwnership === "expo";
@@ -27,46 +77,14 @@ const CallScreen = () => {
   const [ZegoComponent, setZegoComponent] = useState(null);
   const [NavContainer, setNavContainer] = useState(null);
   const [StackNav, setStackNav] = useState(null);
+  const [initError, setInitError] = useState(null);
 
-  const appId = Number(process.env.EXPO_PUBLIC_APP_ID);
-  const appSign = process.env.EXPO_PUBLIC_APP_SIGN;
+  // Set Platform globally
+  if (typeof global !== "undefined" && !global.Platform) {
+    global.Platform = Platform;
+  }
 
-  // Load Zego + init service trước khi render
-  useEffect(() => {
-    if (!isExpoGo && appId && appSign && user?._id) {
-      try {
-        const zegoModule = require("@zegocloud/zego-uikit-prebuilt-call-rn");
-        const { NavigationContainer } = require("@react-navigation/native");
-        const {
-          createNativeStackNavigator,
-        } = require("@react-navigation/native-stack");
-
-        const service = zegoModule.default; // ZegoUIKitPrebuiltCallService instance
-
-        // Init service trước
-        service
-          .init(
-            appId,
-            appSign,
-            String(user._id),
-            String(user.name || "User"),
-            [],
-          )
-          .then(() => {
-            setZegoComponent(() => zegoModule.ZegoUIKitPrebuiltCall);
-            setNavContainer(() => NavigationContainer);
-            setStackNav(() => createNativeStackNavigator());
-            setZegoReady(true);
-          })
-          .catch((e) => {
-            console.log("Zego init error:", e);
-          });
-      } catch (e) {
-        console.log("Zego load error:", e);
-      }
-    }
-  }, [isExpoGo, appId, appSign, user?._id]);
-
+  // Xin quyền
   useEffect(() => {
     let cancelled = false;
     const requestPermissions = async () => {
@@ -77,20 +95,20 @@ const CallScreen = () => {
             PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           ]);
           if (cancelled) return;
-          const cameraOk =
-            granted[PermissionsAndroid.PERMISSIONS.CAMERA] === "granted";
-          const micOk =
+          const ok =
+            granted[PermissionsAndroid.PERMISSIONS.CAMERA] === "granted" &&
             granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === "granted";
-          if (cameraOk && micOk) setPermissionReady(true);
-          else setPermissionDenied(true);
+          ok ? setPermissionReady(true) : setPermissionDenied(true);
         } catch {
           if (!cancelled) setPermissionDenied(true);
         }
       } else {
+        const { ImagePicker } = require("expo-image-picker");
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (cancelled) return;
-        if (status === "granted") setPermissionReady(true);
-        else setPermissionDenied(true);
+        status === "granted"
+          ? setPermissionReady(true)
+          : setPermissionDenied(true);
       }
     };
     requestPermissions();
@@ -98,6 +116,43 @@ const CallScreen = () => {
       cancelled = true;
     };
   }, []);
+
+  // Init Zego (singleton - chỉ init 1 lần)
+  useEffect(() => {
+    if (isExpoGo || !appId || !appSign || !user?._id) {
+      console.log("Zego init skipped:", {
+        isExpoGo,
+        hasAppId: !!appId,
+        hasAppSign: !!appSign,
+        hasUserId: !!user?._id,
+      });
+      return;
+    }
+
+    console.log("Starting Zego init with:", {
+      appId,
+      appSign,
+      userId: user._id,
+    });
+
+    initZegoOnce(appId, appSign, user._id, user.name || "User")
+      .then(() => {
+        const zegoModule = require("@zegocloud/zego-uikit-prebuilt-call-rn");
+        const { NavigationContainer } = require("@react-navigation/native");
+        const {
+          createNativeStackNavigator,
+        } = require("@react-navigation/native-stack");
+
+        setZegoComponent(() => zegoModule.ZegoUIKitPrebuiltCall);
+        setNavContainer(() => NavigationContainer);
+        setStackNav(() => createNativeStackNavigator());
+        setZegoReady(true);
+      })
+      .catch((e) => {
+        console.log("Zego init error:", e);
+        setInitError(e?.message || "Lỗi khởi tạo Zego");
+      });
+  }, [isExpoGo, appId, appSign, user?._id]);
 
   const saveCallRecord = async ({ status, durationSeconds }) => {
     if (!receiverId) return;
@@ -143,7 +198,7 @@ const CallScreen = () => {
       <View style={styles.fallback}>
         <Text style={styles.fallbackTitle}>Call không chạy trên Expo Go</Text>
         <Text style={styles.fallbackText}>
-          Bạn cần mở app bằng bản dev-client hoặc APK build từ EAS.
+          Cần build dev-client hoặc APK từ EAS.
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
@@ -152,10 +207,10 @@ const CallScreen = () => {
     );
   }
 
-  if (!user || !user._id) {
+  if (!user?._id) {
     return (
       <View style={styles.fallback}>
-        <Text style={styles.fallbackText}>Đang tải dữ liệu kết nối...</Text>
+        <Text style={styles.fallbackText}>Đang tải dữ liệu...</Text>
       </View>
     );
   }
@@ -165,7 +220,7 @@ const CallScreen = () => {
       <View style={styles.fallback}>
         <Text style={styles.fallbackTitle}>Cần quyền Camera và Micro</Text>
         <Text style={styles.fallbackText}>
-          Vui lòng bật quyền trong Cài đặt để gọi điện / video.
+          Vui lòng bật quyền trong Cài đặt.
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
@@ -186,9 +241,6 @@ const CallScreen = () => {
     return (
       <View style={styles.fallback}>
         <Text style={styles.fallbackTitle}>Thiếu cấu hình Zego</Text>
-        <Text style={styles.fallbackText}>
-          Cần cấu hình EXPO_PUBLIC_APP_ID và EXPO_PUBLIC_APP_SIGN.
-        </Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.fallbackLink}>Quay lại</Text>
         </TouchableOpacity>
@@ -207,13 +259,20 @@ const CallScreen = () => {
     );
   }
 
-  if (!zegoReady || !ZegoComponent || !NavContainer || !StackNav) {
+  if (initError) {
     return (
       <View style={styles.fallback}>
-        <Text style={styles.fallbackText}>Đang khởi tạo cuộc gọi...</Text>
+        <Text style={styles.fallbackTitle}>Lỗi kết nối</Text>
+        <Text style={styles.fallbackText}>{initError}</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Text style={styles.fallbackLink}>Quay lại</Text>
+        </TouchableOpacity>
       </View>
     );
   }
+
+  if (!zegoReady || !ZegoComponent || !NavContainer || !StackNav)
+    return <CallingLoadingScreen onCancel={() => router.back()} type={type} />;
 
   const ZegoScreen = () => (
     <ZegoComponent
@@ -225,6 +284,11 @@ const CallScreen = () => {
       config={{
         turnOnCameraWhenJoining: isVideoCall,
         useSpeakerWhenJoining: isVideoCall,
+        autoAccept: false,
+        ringtoneConfig: {
+          incomingCallFileName: "",
+          outgoingCallFileName: "",
+        },
         onCallEnd: (cid, reason, duration) => {
           const durationSeconds = Math.max(0, Math.floor(duration || 0));
           Promise.all([
@@ -248,7 +312,6 @@ const CallScreen = () => {
 export default CallScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   fallback: {
     flex: 1,
     padding: 20,
