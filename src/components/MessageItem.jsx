@@ -18,7 +18,14 @@ import Typo from "./Typo";
 import { Image } from "expo-image";
 import api from "@/utils/api";
 
-const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
+const MessageItem = ({
+  item,
+  isDirect,
+  onDelete,
+  onEdit,
+  themeBubbleColor,
+  themeTextColor,
+}) => {
   const { user } = useAuth();
   const isMe = item.isMe;
   const isLocal = item.isLocal;
@@ -70,7 +77,9 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
         <View
           style={[
             styles.messageBuddle,
-            isMe ? styles.myBuddle : styles.theirBudde,
+            isMe
+              ? { backgroundColor: themeBubbleColor || colors.myBubble }
+              : styles.theirBudde,
           ]}
         >
           {shouldShowAvatarAndName && (
@@ -93,12 +102,19 @@ const MessageItem = ({ item, isDirect, onDelete, onEdit }) => {
               )}
             </View>
           )}
-          {item.content ? <Typo size={15}>{item.content}</Typo> : null}
+          {item.content ? (
+            <Typo
+              size={15}
+              color={isMe ? themeTextColor || colors.text : colors.text}
+            >
+              {item.content}
+            </Typo>
+          ) : null}
           <Typo
             style={{ alignSelf: "flex-end", marginTop: 4 }}
             size={11}
             fontWeight={"500"}
-            color={colors.neutral600}
+            color={isMe ? themeTextColor : colors.neutral900}
           >
             {item.createdAt}
           </Typo>

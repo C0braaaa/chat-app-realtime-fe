@@ -19,7 +19,13 @@ import { Image } from "expo-image";
 import * as SecureStore from "expo-secure-store";
 
 import ScreenWrapper from "@/components/ScreenWrapper";
-import { colors, radius, spacingX, spacingY } from "@/constants/theme";
+import {
+  colors,
+  radius,
+  spacingX,
+  spacingY,
+  CHAT_THEMES,
+} from "@/constants/theme";
 import { scale, verticalScale } from "@/utils/styling";
 import Header from "@/components/Header";
 import BackButton from "@/components/BackButton";
@@ -31,15 +37,18 @@ import api from "@/utils/api";
 import { useAuth } from "@/contexts/authContext";
 import MediaCollection from "@/components/MediaCollection";
 import SearchMessagesModal from "@/components/SearchMessages";
+import ThemeModal from "@/components/ThemeModal";
 
 const SOCKET_URL = "https://cchat-be.onrender.com";
 
 const conversation = () => {
+  // Lấy dữ liệu từ URL truyền sang (id, tên, avatar đối phương)
   const { conversationId, name, avatar, type } = useLocalSearchParams();
-  const { user } = useAuth();
+  const { user } = useAuth(); // Lấy thông tin user hiện tại từ Context
   const router = useRouter();
   const isGroup = type === "group";
 
+  // Các state quản lý UI và dữ liệu tin nhắn
   const [image, setImage] = useState(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -47,16 +56,18 @@ const conversation = () => {
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
+  const [themeKey, setThemeKey] = useState("0");
 
-  const socketRef = useRef(null);
-  const flatListRef = useRef(null);
+  const socketRef = useRef(null); // Lưu trữ instance của socket
+  const flatListRef = useRef(null); // Dùng để điều khiển cuộn danh sách
 
+  // Hàm xử lý xóa cuộc trò chuyện hoặc xóa nhóm
   const handleDeleteConversation = () => {
     setShowHeaderMenu(false);
-
     const alertTitle = isGroup ? "Xóa nhóm" : "Xóa cuộc trò chuyện";
     const alertMessage = isGroup
-      ? "Bạn có chắc không? Hành động này sẽ xóa vĩnh viễn nhóm và tất cả tin nhắn của mọi người. Chỉ chủ nhóm mới làm được."
+      ? "Bạn có chắc không? Hành động này sẽ xóa vĩnh viễn nhóm... Chỉ chủ nhóm mới làm được."
       : "Bạn có chắc muốn ẩn cuộc trò chuyện này?";
 
     Alert.alert(alertTitle, alertMessage, [
@@ -68,10 +79,12 @@ const conversation = () => {
           try {
             let res;
             if (isGroup) {
+              // Gọi API xóa nhóm (quyền admin)
               res = await api.delete(`/conversations/group/${conversationId}`, {
                 data: { userId: user._id },
               });
             } else {
+              // Gọi API ẩn cuộc trò chuyện cá nhân
               res = await api.delete(`/conversations/${conversationId}`, {
                 data: { userId: user._id },
               });
@@ -81,15 +94,17 @@ const conversation = () => {
               router.replace("/(main)/home");
             }
           } catch (error) {
-            const errorMsg =
-              error.response?.data?.message || "Could not delete.";
-            Alert.alert("Từ chối quyền", errorMsg);
+            Alert.alert(
+              "Từ chối quyền",
+              error.response?.data?.message || "Could not delete.",
+            );
           }
         },
       },
     ]);
   };
 
+  // Hàm đẩy ảnh lên Cloudinary và lấy URL về
   const uploadToCloudinary = async (fileUri) => {
     try {
       const data = new FormData();
@@ -103,7 +118,10 @@ const conversation = () => {
 
       const res = await fetch(
         "https://api.cloudinary.com/v1_1/dbx1xoswm/image/upload",
-        { method: "post", body: data },
+        {
+          method: "post",
+          body: data,
+        },
       );
       const fileData = await res.json();
       return fileData.secure_url;
@@ -113,6 +131,7 @@ const conversation = () => {
     }
   };
 
+  // Hàm chuẩn hóa dữ liệu tin nhắn từ BE sang định dạng FE cần
   const processMessage = (msg) => {
     return {
       id: msg._id,
@@ -124,6 +143,26 @@ const conversation = () => {
     };
   };
 
+  // Hàm gọi API cập nhật chủ đề (theme) cho cuộc hội thoại
+  const handleSelectTheme = async (selectedKey) => {
+    try {
+      const res = await api.put(`/conversations/theme/${conversationId}`, {
+        themeKey: selectedKey,
+      });
+      if (res.data.success) {
+        setThemeKey(selectedKey);
+        setShowThemeModal(false);
+      }
+    } catch (error) {
+      Alert.alert("Lỗi", "Không thể cập nhật chủ đề");
+    }
+  };
+
+  // Tìm thông tin theme hiện tại dựa trên themeKey
+  const currentTheme =
+    CHAT_THEMES.find((t) => t.id === themeKey) || CHAT_THEMES[0];
+
+  // Effect quản lý kết nối Socket và tải dữ liệu ban đầu
   useEffect(() => {
     if (!conversationId || !user) return;
 
@@ -134,6 +173,7 @@ const conversation = () => {
         transports: ["websocket"],
       });
 
+      // Lắng nghe lỗi kết nối (hết hạn token)
       socketRef.current.on("connect_error", (err) => {
         if (
           err.message === "Invalid token" ||
@@ -145,10 +185,17 @@ const conversation = () => {
         }
       });
 
+      // Tham gia vào phòng chat khi kết nối thành công
       socketRef.current.on("connect", () => {
         socketRef.current.emit("join_conversation", conversationId);
       });
 
+      // Lắng nghe sự kiện đổi theme từ người khác
+      socketRef.current.on("theme_updated", (data) => {
+        if (data.conversationId === conversationId) setThemeKey(data.themeKey);
+      });
+
+      // Nhận tin nhắn mới theo thời gian thực
       socketRef.current.on("new_message", (newMsg) => {
         const formattedMsg = processMessage(newMsg);
         setMessages((prev) => {
@@ -157,10 +204,12 @@ const conversation = () => {
         });
       });
 
+      // Xử lý khi có tin nhắn bị xóa
       socketRef.current.on("message_deleted", (deleteMsgId) => {
         setMessages((prev) => prev.filter((msg) => msg.id !== deleteMsgId));
       });
 
+      // Xử lý khi có tin nhắn được sửa
       socketRef.current.on("message_edited", (updatedMsg) => {
         const formattedMsg = processMessage(updatedMsg);
         setMessages((prev) =>
@@ -173,38 +222,46 @@ const conversation = () => {
       });
     };
 
-    const fetchMessages = async () => {
+    // Tải tin nhắn cũ và chi tiết theme từ Database
+    const fetchInitialData = async () => {
       try {
-        const res = await api.get(
+        const msgRes = await api.get(
           `/messages/${conversationId}?userId=${user._id}`,
         );
-        if (res.data.success) {
-          const formattedMsgs = res.data.data.map(processMessage);
-          setMessages([...formattedMsgs]);
-        }
+        if (msgRes.data.success)
+          setMessages(msgRes.data.data.map(processMessage));
+
+        const convRes = await api.get(
+          `/conversations/detail/${conversationId}`,
+        );
+        if (convRes.data.success && convRes.data.data.themeKey)
+          setThemeKey(convRes.data.data.themeKey);
       } catch (error) {
-        console.log(error);
+        console.log("Fetch Error:", error);
       }
     };
 
     initSocket();
-    fetchMessages();
+    fetchInitialData();
 
+    // Dọn dẹp socket khi thoát màn hình
     return () => {
       if (socketRef.current) {
         socketRef.current.emit("leave_conversation", conversationId);
+        socketRef.current.off("theme_updated");
         socketRef.current.disconnect();
       }
     };
   }, [conversationId, user]);
 
+  // Hàm xử lý gửi tin nhắn (bao gồm cả gửi mới và sửa tin)
   const handleSendMessage = async () => {
     if (!message.trim() && !image) return;
 
+    // Nếu đang ở chế độ sửa tin nhắn
     if (editingMessage) {
       const contentToUpdate = message;
       const msgId = editingMessage.id;
-
       setMessages((prev) =>
         prev.map((m) =>
           m.id === msgId ? { ...m, content: contentToUpdate } : m,
@@ -214,17 +271,17 @@ const conversation = () => {
       setEditingMessage(null);
 
       try {
-        const res = await api.put(`/messages/${msgId}`, {
+        await api.put(`/messages/${msgId}`, {
           userId: user._id,
           content: contentToUpdate,
         });
-        if (!res.data.success) throw new Error("Edit failed");
       } catch (error) {
-        Alert.alert("Lỗi", "Cập nhật tin nhắn thất bại");
+        Alert.alert("Lỗi", "Cập nhật thất bại");
       }
       return;
     }
 
+    // Cơ chế tin nhắn giả (Optimistic UI) để app mượt hơn
     const tempId = Date.now().toString();
     const tempMsg = {
       id: tempId,
@@ -235,7 +292,6 @@ const conversation = () => {
       isMe: true,
       isLocal: true,
     };
-
     setMessages((prev) => [tempMsg, ...prev]);
 
     const contentToSend = message;
@@ -245,50 +301,55 @@ const conversation = () => {
 
     try {
       let attachmentUrl = null;
-      if (imageToSend) {
-        attachmentUrl = await uploadToCloudinary(imageToSend);
-      }
+      if (imageToSend) attachmentUrl = await uploadToCloudinary(imageToSend);
 
-      const payload = {
+      const res = await api.post("/messages", {
         conversationId,
         content: contentToSend,
         attachement: attachmentUrl,
         senderId: user?._id,
-      };
-
-      const res = await api.post("/messages", payload);
+      });
       if (res.data.success) {
-        const realMessage = res.data.data;
-        const formattedMsg = processMessage(realMessage);
-
+        const formattedMsg = processMessage(res.data.data);
         setMessages((prev) => {
           const isSocketAdded = prev.some((m) => m.id === formattedMsg.id);
-          if (isSocketAdded) {
-            return prev.filter((m) => m.id !== tempId);
-          } else {
-            return prev.map((m) => (m.id === tempId ? formattedMsg : m));
-          }
+          return isSocketAdded
+            ? prev.filter((m) => m.id !== tempId)
+            : prev.map((m) => (m.id === tempId ? formattedMsg : m));
         });
       }
     } catch (error) {
-      Alert.alert("Lỗi", "Tin nhắn không gửi được");
+      Alert.alert("Lỗi", "Gửi tin thất bại");
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
     }
   };
 
+  // Chọn ảnh từ thư viện
   const onPickFile = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
       quality: 0.5,
     });
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
+    if (!result.canceled) setImage(result.assets[0].uri);
   };
+
+  // Nhấn vào tin nhắn từ kết quả tìm kiếm để cuộn tới
   const handleSelectSearchMessage = (item) => {
     setShowSearch(false);
-    // Logic scrollToMessage của bạn ở đây nếu cần
+    setTimeout(() => {
+      if (!item || !item._id) return;
+      const index = messages.findIndex((m) => m.id === item._id);
+      if (index !== -1) {
+        flatListRef.current?.scrollToIndex({
+          index,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      } else {
+        Alert.alert("Thông báo", "Tin nhắn quá xa...");
+      }
+    }, 300);
   };
 
   return (
@@ -354,6 +415,22 @@ const conversation = () => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.menuItem}
+                    onPress={() => {
+                      setShowHeaderMenu(false);
+                      setShowThemeModal(true);
+                    }}
+                  >
+                    <Ionicons
+                      name="color-palette-outline"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Typo size={16} color={colors.white} fontWeight={"500"}>
+                      Đổi chủ đề
+                    </Typo>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.menuItem}
                     onPress={handleDeleteConversation}
                   >
                     <Ionicons
@@ -371,13 +448,34 @@ const conversation = () => {
           </TouchableWithoutFeedback>
         </Modal>
 
-        <View style={styles.content}>
+        <View
+          style={[
+            styles.content,
+            {
+              backgroundColor:
+                currentTheme.id === "0" ? colors.white : "transparent",
+            },
+          ]}
+        >
+          {currentTheme.uri && (
+            <Image
+              source={{ uri: currentTheme.uri }}
+              style={StyleSheet.absoluteFillObject}
+              contentFit="cover"
+            />
+          )}
           <FlatList
             ref={flatListRef}
             data={messages}
             inverted
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.messagesContainer}
+            onScrollToIndexFailed={(info) => {
+              flatListRef.current?.scrollToOffset({
+                offset: info.averageItemLength * info.index,
+                animated: true,
+              });
+            }}
             renderItem={({ item }) => (
               <MessageItem
                 item={item}
@@ -389,12 +487,14 @@ const conversation = () => {
                   setEditingMessage(msg);
                   setMessage(msg.content);
                 }}
+                themeBubbleColor={currentTheme.bubbleColor}
+                themeTextColor={currentTheme.textColor}
               />
             )}
             keyExtractor={(item) => item.id}
           />
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { backgroundColor: "transparent" }]}>
             <Input
               value={message}
               onChangeText={setMessage}
@@ -461,6 +561,12 @@ const conversation = () => {
         onClose={() => setShowSearch(false)}
         conversationId={conversationId}
         onSelectMessage={handleSelectSearchMessage}
+      />
+      <ThemeModal
+        visible={showThemeModal}
+        onClose={() => setShowThemeModal(false)}
+        onSelect={handleSelectTheme}
+        currentThemeKey={themeKey}
       />
     </ScreenWrapper>
   );

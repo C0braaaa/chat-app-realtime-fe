@@ -71,3 +71,42 @@ export const radius = {
   _90: verticalScale(90),
   full: 200,
 };
+
+export const CHAT_THEMES = [
+  {
+    id: "0",
+    name: "Mặc định",
+    uri: null,
+    color: "#fff",
+    bubbleColor: "#FFE1CC",
+    textColor: "#292524",
+  },
+  {
+    id: "1",
+    name: "Theme 1",
+    uri: "https://res.cloudinary.com/dbx1xoswm/image/upload/v1772967442/theme_chat_1_laorhp.jpg",
+    bubbleColor: "#4ade80",
+    textColor: "#1c1917",
+  },
+  {
+    id: "2",
+    name: "Theme 2",
+    uri: "https://res.cloudinary.com/dbx1xoswm/image/upload/v1772967479/theme_chat_2_c3adj1.jpg",
+    bubbleColor: "#a855f7",
+    textColor: "#ffffff",
+  },
+  {
+    id: "3",
+    name: "Theme 3",
+    uri: "https://res.cloudinary.com/dbx1xoswm/image/upload/v1772967602/theme_chat_3_jmdguu.jpg",
+    bubbleColor: "#22d3ee",
+    textColor: "#000000",
+  },
+  {
+    id: "4",
+    name: "Pink Dog",
+    uri: "https://res.cloudinary.com/dbx1xoswm/image/upload/v1772971853/theme_chat_4_ss7f7x.jpg",
+    bubbleColor: "#450a0a",
+    textColor: "#ffffff",
+  },
+];

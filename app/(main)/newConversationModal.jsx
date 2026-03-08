@@ -206,7 +206,7 @@ const newConversationModal = () => {
     }
   };
   return (
-    <ScreenWrapper isModal={true}>
+    <ScreenWrapper isModal={true} showPattern={false}>
       <View style={styles.container}>
         <Header
           title={isGroupMode ? "Nhóm mới" : "Chọn người trò chuyện"}

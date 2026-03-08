@@ -43,7 +43,7 @@ const MediaCollection = ({ messages }) => {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <Typo size={20} color={colors.primary} fontWeight={"500"}>
+          <Typo size={18} color={colors.neutral400}>
             Không có dữ liệu!
           </Typo>
         </View>

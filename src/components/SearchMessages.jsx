@@ -7,6 +7,7 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, spacingX, spacingY } from "@/constants/theme";
@@ -14,6 +15,8 @@ import { scale, verticalScale } from "@/utils/styling";
 import Typo from "@/components/Typo";
 import Avatar from "@/components/Avatar";
 import api from "@/utils/api";
+import { useAuth } from "@/contexts/authContext";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const SearchMessagesModal = ({
   visible,
@@ -21,29 +24,30 @@ const SearchMessagesModal = ({
   conversationId,
   onSelectMessage,
 }) => {
+  const { user } = useAuth();
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Debounce search để tránh call API liên tục
+  const debounceValue = useDebounce(searchText, 500);
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (searchText.trim()) {
-        handleSearch();
-      } else {
-        setResults([]);
-      }
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchText]);
+    if (debounceValue.trim()) {
+      handleSearch();
+    } else {
+      setResults([]);
+    }
+  }, [debounceValue]);
 
   const handleSearch = async () => {
     setLoading(true);
     try {
       const res = await api.get(`/messages/search/${conversationId}`, {
-        params: { query: searchText },
+        params: {
+          keyword: debounceValue,
+          userId: user?._id,
+        },
       });
+
       if (res.data.success) {
         setResults(res.data.data);
       }
@@ -66,9 +70,9 @@ const SearchMessagesModal = ({
       />
       <View style={styles.textContent}>
         <Typo fontWeight="600" size={16} color={colors.white}>
-          {item.senderId?.name || "Người dùng"}
+          {item.senderId?.name === user?.name ? "Bạn" : item.senderId?.name}
         </Typo>
-        <Typo size={14} color={colors.neutral300} numberOfLines={1}>
+        <Typo size={14} color={colors.neutral300} numberOfLines={2}>
           {item.content}
         </Typo>
       </View>
@@ -76,12 +80,11 @@ const SearchMessagesModal = ({
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false}>
+    <Modal visible={visible} animationType="fade" transparent={false}>
       <View style={styles.container}>
-        {/* Header Search */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={colors.white} />
+            <Ionicons name="arrow-back" size={26} color={colors.white} />
           </TouchableOpacity>
           <View style={styles.searchBar}>
             <TextInput
@@ -91,15 +94,25 @@ const SearchMessagesModal = ({
               value={searchText}
               onChangeText={setSearchText}
               autoFocus
+              selectionColor={colors.primary}
             />
             {loading && (
               <ActivityIndicator size="small" color={colors.primary} />
+            )}
+            {searchText.length > 0 && !loading && (
+              <TouchableOpacity onPress={() => setSearchText("")}>
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={colors.neutral400}
+                />
+              </TouchableOpacity>
             )}
           </View>
         </View>
 
         <View style={styles.infoBar}>
-          <Typo color={colors.neutral400} size={14}>
+          <Typo color={colors.neutral400} size={14} fontWeight="500">
             {results.length} tin nhắn khớp
           </Typo>
         </View>
@@ -109,11 +122,14 @@ const SearchMessagesModal = ({
           renderItem={renderItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             !loading &&
             searchText.length > 0 && (
               <View style={styles.emptyContainer}>
-                <Typo color={colors.neutral400}>Không tìm thấy kết quả</Typo>
+                <Typo color={colors.neutral400}>
+                  Không có kết quả nào phù hợp
+                </Typo>
               </View>
             )
           }
@@ -126,21 +142,24 @@ const SearchMessagesModal = ({
 export default SearchMessagesModal;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: verticalScale(50),
+    paddingTop: Platform.OS === "ios" ? verticalScale(60) : verticalScale(40),
     paddingHorizontal: spacingX._15,
-    paddingBottom: spacingY._10,
-    gap: spacingX._10,
+    paddingBottom: spacingY._15,
+    gap: spacingX._12,
   },
   searchBar: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1a1a1a",
-    borderRadius: radius._10,
+    backgroundColor: "#1c1c1e",
+    borderRadius: radius._12,
     paddingHorizontal: spacingX._12,
     height: verticalScale(45),
   },
@@ -148,21 +167,30 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.white,
     fontSize: scale(16),
+    paddingVertical: 0,
   },
   infoBar: {
-    paddingHorizontal: spacingX._15,
-    paddingVertical: spacingY._10,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#333",
+    paddingHorizontal: spacingX._20,
+    paddingVertical: spacingY._12,
+    borderBottomWidth: 0.3,
+    borderBottomColor: "#262626",
   },
   resultItem: {
     flexDirection: "row",
-    paddingHorizontal: spacingX._15,
-    paddingVertical: spacingY._12,
+    paddingHorizontal: spacingX._20,
+    paddingVertical: spacingY._15,
     alignItems: "center",
-    gap: spacingX._12,
+    gap: spacingX._15,
   },
-  textContent: { flex: 1, gap: 2 },
-  listContent: { paddingBottom: 20 },
-  emptyContainer: { alignItems: "center", marginTop: 50 },
+  textContent: {
+    flex: 1,
+    gap: 4,
+  },
+  listContent: {
+    paddingBottom: 30,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    marginTop: 100,
+  },
 });
