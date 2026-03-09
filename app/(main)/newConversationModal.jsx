@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from "react-native";
 import React, { useState, useEffect, use } from "react";
 import { colors, radius, spacingX, spacingY } from "@/constants/theme";

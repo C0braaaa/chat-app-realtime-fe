@@ -20,6 +20,7 @@ import { useSocket } from "@/contexts/socketContext";
 import { useAuth } from "@/contexts/authContext";
 import Avatar from "@/components/Avatar";
 import Typo from "@/components/Typo";
+import { spacingX, spacingY } from "@/constants/theme";
 
 // ─── STUN servers (miễn phí của Google) ─────────────────────────────────────
 const ICE_SERVERS = {
@@ -41,6 +42,7 @@ export default function CallScreen() {
 
   const isVideo = callType === "video";
   const remoteUserId = isIncoming === "true" ? from : to;
+  const isMissedCall = isIncoming === "true" && !offer; // Tap từ notification khi app bị kill
 
   // ─── State ────────────────────────────────────────────────────────────────
   const [callStatus, setCallStatus] = useState(
@@ -55,6 +57,7 @@ export default function CallScreen() {
   // ─── Refs ─────────────────────────────────────────────────────────────────
   const pcRef = useRef(null); // RTCPeerConnection
   const pendingCandidates = useRef([]); // ICE candidates đến trước answer
+  const callStatusRef = useRef(isIncoming === "true" ? "incoming" : "calling");
 
   // ─── Khởi tạo PeerConnection ──────────────────────────────────────────────
   const createPeerConnection = () => {
@@ -74,15 +77,18 @@ export default function CallScreen() {
     pc.ontrack = (event) => {
       if (event.streams && event.streams[0]) {
         setRemoteStream(event.streams[0]);
+        callStatusRef.current = "connected";
         setCallStatus("connected");
       }
     };
 
+    // Dùng connectionState để update status (quan trọng cho audio call)
     pc.onconnectionstatechange = () => {
-      if (
-        pc.connectionState === "disconnected" ||
-        pc.connectionState === "failed"
-      ) {
+      const state = pc.connectionState;
+      if (state === "connected") {
+        callStatusRef.current = "connected";
+        setCallStatus("connected");
+      } else if (state === "disconnected" || state === "failed") {
         endCall(false);
       }
     };
@@ -262,10 +268,29 @@ export default function CallScreen() {
 
   // ─── Khi mount: bắt đầu gọi hoặc chờ accept ─────────────────────────────
   useEffect(() => {
+    if (isMissedCall) {
+      setCallStatus("missed");
+      return;
+    }
     if (isIncoming !== "true") {
       startCall();
+
+      // Timeout 20s nếu người kia không bắt máy
+      const timeout = setTimeout(() => {
+        if (callStatusRef.current !== "connected") {
+          Alert.alert("Không có người trả lời", `${name} không bắt máy`);
+          endCall(true);
+        }
+      }, 20000);
+
+      return () => {
+        clearTimeout(timeout);
+        localStream?.getTracks().forEach((t) => t.stop());
+        pcRef.current?.close();
+      };
     }
-    // Cleanup khi rời màn hình
+
+    // Cleanup khi rời màn hình (incoming)
     return () => {
       localStream?.getTracks().forEach((t) => t.stop());
       pcRef.current?.close();
@@ -300,8 +325,10 @@ export default function CallScreen() {
                   ? "Cuộc gọi video đến"
                   : "Cuộc gọi thoại đến"
                 : callStatus === "connected"
-                  ? "Đang kết nối..."
-                  : ""}
+                  ? !isVideo
+                    ? "🎙️ Đang trong cuộc gọi"
+                    : ""
+                  : "Đang kết nối..."}
           </Typo>
         </View>
       )}
@@ -318,7 +345,35 @@ export default function CallScreen() {
       )}
 
       {/* Nút điều khiển */}
-      {callStatus === "incoming" ? (
+      {callStatus === "missed" ? (
+        // Cuộc gọi nhỡ (tap notification khi app bị kill)
+        <View style={styles.missedCallContainer}>
+          <Ionicons name="call-outline" size={40} color="#e74c3c" />
+          <Typo
+            color="#e74c3c"
+            size={18}
+            fontWeight="600"
+            style={{ marginTop: 8 }}
+          >
+            Cuộc gọi nhỡ
+          </Typo>
+          <Typo
+            color="#aaa"
+            size={14}
+            style={{ marginTop: 4, textAlign: "center" }}
+          >
+            Bạn đã bỏ lỡ cuộc gọi từ {name}.Hãy gọi lại cho họ.
+          </Typo>
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={() => router.back()}
+          >
+            <Typo color="#fff" size={16} fontWeight="600">
+              Đóng
+            </Typo>
+          </TouchableOpacity>
+        </View>
+      ) : callStatus === "incoming" ? (
         // Màn hình cuộc gọi đến → Nghe / Từ chối
         <View style={styles.incomingActions}>
           <TouchableOpacity style={styles.rejectBtn} onPress={rejectCall}>
@@ -419,7 +474,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 20,
+    gap: spacingX._40,
   },
   controlBtn: {
     width: 60,
@@ -436,6 +491,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#e74c3c",
     justifyContent: "center",
     alignItems: "center",
+  },
+  missedCallContainer: {
+    position: "absolute",
+    bottom: 80,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  closeBtn: {
+    marginTop: 24,
+    paddingHorizontal: 40,
+    paddingVertical: 14,
+    borderRadius: 30,
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
   incomingActions: {
     position: "absolute",

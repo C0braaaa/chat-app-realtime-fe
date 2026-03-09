@@ -13,13 +13,15 @@ import Typo from "./Typo";
 const { width } = Dimensions.get("window");
 const columnWidth = (width - spacingX._30) / 2;
 
-const MediaCollection = ({ messages }) => {
+const MediaCollection = ({ messages, onSelectMedia }) => {
   const mediaFiles = messages.filter(
     (msg) => msg.attachement !== null && typeof msg.attachement === "string",
   );
-
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.imageWrapper}>
+    <TouchableOpacity
+      style={styles.imageWrapper}
+      onPress={() => onSelectMedia(item)}
+    >
       <Image
         source={{ uri: item.attachement }}
         style={styles.image}

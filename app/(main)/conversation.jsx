@@ -60,6 +60,7 @@ const conversation = () => {
         name,
         avatar,
         isIncoming: "false",
+        conversationId,
       },
     });
   };
@@ -361,9 +362,13 @@ const conversation = () => {
   // Nhấn vào tin nhắn từ kết quả tìm kiếm để cuộn tới
   const handleSelectSearchMessage = (item) => {
     setShowSearch(false);
+    setShowMedia(false);
     setTimeout(() => {
-      if (!item || !item._id) return;
-      const index = messages.findIndex((m) => m.id === item._id);
+      if (!item) return;
+      const targetId = item.id || item._id;
+
+      const index = messages.findIndex((m) => m.id === targetId);
+
       if (index !== -1) {
         flatListRef.current?.scrollToIndex({
           index,
@@ -371,9 +376,9 @@ const conversation = () => {
           viewPosition: 0.5,
         });
       } else {
-        Alert.alert("Thông báo", "Tin nhắn quá xa...");
+        Alert.alert("Thông báo", "Tin nhắn quá xa hoặc đã bị xóa.");
       }
-    }, 300);
+    }, 500);
   };
 
   return (
@@ -602,7 +607,7 @@ const conversation = () => {
           />
           <MediaCollection
             messages={messages}
-            onSelectImage={(item) => scrollToMessage(item)}
+            onSelectMedia={handleSelectSearchMessage}
           />
         </ScreenWrapper>
       </Modal>

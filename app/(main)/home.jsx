@@ -336,7 +336,7 @@ const home = () => {
         }
       >
         <Typo style={{ fontWeight: "600" }}>
-          {selectedTab === 0 ? "Thêm người" : "Tạo nhóm"}
+          {selectedTab === 0 ? "Trò chuyện mới" : "Tạo nhóm"}
         </Typo>
         <Ionicons name="add" color={colors.black} size={verticalScale(24)} />
       </Button>
@@ -405,10 +405,10 @@ const styles = StyleSheet.create({
   },
   floatingButton: {
     height: verticalScale(50),
-    width: verticalScale(120),
+    width: verticalScale(140),
     borderRadius: radius._10,
     gap: spacingX._5,
-    paddingVertical: spacingX._10,
+    paddingHorizontal: spacingX._20,
     position: "absolute",
     display: "flex",
     flexDirection: "row",
