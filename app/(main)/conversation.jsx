@@ -204,6 +204,14 @@ const conversation = () => {
         });
       });
 
+      // Xử lý khi nhóm bị giải tán
+      socketRef.current.on("group_deleted", (data) => {
+        if (data.conversationId === conversationId) {
+          Alert.alert("Thông báo", "Nhóm này đã bị giải tán bởi chủ nhóm.");
+          router.replace("/(main)/home");
+        }
+      });
+
       // Xử lý khi có tin nhắn bị xóa
       socketRef.current.on("message_deleted", (deleteMsgId) => {
         setMessages((prev) => prev.filter((msg) => msg.id !== deleteMsgId));

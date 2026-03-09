@@ -149,6 +149,13 @@ const newConversationModal = () => {
       Alert.alert("Lỗi", "Tên nhóm không được để trống");
       return;
     }
+    if (typeof image === "number") {
+      Alert.alert(
+        "Lỗi",
+        "Vui lòng nhấn vào vòng tròn để chọn ảnh đại diện cho nhóm!",
+      );
+      return;
+    }
     if (selectedParticipants.length < 2) {
       Alert.alert("Lỗi", "Nhóm phải có ít nhất 2 thành viên");
       return;
@@ -177,7 +184,7 @@ const newConversationModal = () => {
           params: {
             conversationId: conversationData._id,
             name: groupName,
-            image: groupAvatarUrl || "",
+            avatar: groupAvatarUrl || "",
             type: "group",
           },
         });

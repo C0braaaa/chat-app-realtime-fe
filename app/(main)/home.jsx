@@ -137,7 +137,6 @@ const home = () => {
 
       socketRef.current.on("connect", () => {
         socketRef.current.emit("join_room", user._id);
-        console.log("Connected to private room:", user._id);
       });
 
       socketRef.current.on("new_group_created", (res) => {
@@ -148,6 +147,12 @@ const home = () => {
             return [res.data, ...prev];
           });
         }
+      });
+
+      socketRef.current.on("group_deleted", (data) => {
+        setConversations((prev) =>
+          prev.filter((c) => c._id !== data.conversationId),
+        );
       });
 
       socketRef.current.on("update_last_message", (data) => {
@@ -320,6 +325,7 @@ const home = () => {
           </ScrollView>
         </View>
       </View>
+
       <Button
         style={styles.floatingButton}
         onPress={() =>
@@ -329,6 +335,9 @@ const home = () => {
           })
         }
       >
+        <Typo style={{ fontWeight: "600" }}>
+          {selectedTab === 0 ? "Thêm người" : "Tạo nhóm"}
+        </Typo>
         <Ionicons name="add" color={colors.black} size={verticalScale(24)} />
       </Button>
     </ScreenWrapper>
@@ -396,9 +405,13 @@ const styles = StyleSheet.create({
   },
   floatingButton: {
     height: verticalScale(50),
-    width: verticalScale(50),
-    borderRadius: 100,
+    width: verticalScale(120),
+    borderRadius: radius._10,
+    gap: spacingX._5,
+    paddingVertical: spacingX._10,
     position: "absolute",
+    display: "flex",
+    flexDirection: "row",
     bottom: verticalScale(30),
     right: verticalScale(30),
   },
