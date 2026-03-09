@@ -8,6 +8,7 @@ import React, {
 import { io } from "socket.io-client";
 import * as SecureStore from "expo-secure-store";
 import { useAuth } from "./authContext";
+import { useRouter } from "expo-router";
 
 const SOCKET_URL = "https://cchat-be.onrender.com";
 
@@ -15,6 +16,7 @@ const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
   const socketRef = useRef(null);
   const [socket, setSocket] = useState(null);
 
@@ -30,6 +32,25 @@ export const SocketProvider = ({ children }) => {
         transports: ["websocket"],
       });
 
+      // ─── Lắng nghe cuộc gọi đến (toàn app) ───────────────────────────────
+      s.on(
+        "incoming_call",
+        ({ from, callerName, callerAvatar, offer, callType }) => {
+          // Điều hướng sang CallScreen với đầy đủ thông tin
+          router.push({
+            pathname: "/(main)/callscreen",
+            params: {
+              from,
+              callType,
+              name: callerName,
+              avatar: callerAvatar,
+              offer: JSON.stringify(offer),
+              isIncoming: "true",
+            },
+          });
+        },
+      );
+
       socketRef.current = s;
       setSocket(s);
     };
@@ -37,6 +58,7 @@ export const SocketProvider = ({ children }) => {
     initSocket();
 
     return () => {
+      socketRef.current?.off("incoming_call");
       socketRef.current?.disconnect();
       socketRef.current = null;
       setSocket(null);

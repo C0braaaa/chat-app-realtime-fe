@@ -38,15 +38,31 @@ import { useAuth } from "@/contexts/authContext";
 import MediaCollection from "@/components/MediaCollection";
 import SearchMessagesModal from "@/components/SearchMessages";
 import ThemeModal from "@/components/ThemeModal";
+import { useSocket } from "@/contexts/socketContext";
 
 const SOCKET_URL = "https://cchat-be.onrender.com";
-
 const conversation = () => {
   // Lấy dữ liệu từ URL truyền sang (id, tên, avatar đối phương)
-  const { conversationId, name, avatar, type } = useLocalSearchParams();
+  const { conversationId, name, avatar, type, peerId } = useLocalSearchParams();
   const { user } = useAuth(); // Lấy thông tin user hiện tại từ Context
   const router = useRouter();
   const isGroup = type === "group";
+  const { socket } = useSocket();
+
+  // Hàm gọi video/audio
+  const handleCall = (callType) => {
+    if (!peerId) return Alert.alert("Lỗi", "Không tìm thấy người nhận");
+    router.push({
+      pathname: "/(main)/callscreen",
+      params: {
+        to: peerId,
+        callType,
+        name,
+        avatar,
+        isIncoming: "false",
+      },
+    });
+  };
 
   // Các state quản lý UI và dữ liệu tin nhắn
   const [image, setImage] = useState(null);
@@ -378,12 +394,38 @@ const conversation = () => {
             </View>
           }
           rightIcon={
-            <TouchableOpacity
-              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              onPress={() => setShowHeaderMenu(true)}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacingX._40,
+              }}
             >
-              <FontAwesome5 name="ellipsis-v" size={22} color="white" />
-            </TouchableOpacity>
+              {!isGroup && (
+                <>
+                  <TouchableOpacity
+                    hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
+                    onPress={() => handleCall("audio")}
+                  >
+                    <Ionicons name="call" size={22} color="white" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
+                    onPress={() => handleCall("video")}
+                  >
+                    <Ionicons name="videocam" size={24} color="white" />
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* ICON MENU 3 CHẤM LUÔN HIỂN THỊ */}
+              <TouchableOpacity
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                onPress={() => setShowHeaderMenu(true)}
+              >
+                <FontAwesome5 name="ellipsis-v" size={22} color="white" />
+              </TouchableOpacity>
+            </View>
           }
         />
 
