@@ -25,7 +25,7 @@ import Loading from "@/components/Loading";
 import Button from "@/components/Button";
 import api from "@/utils/api";
 
-const SOCKET_URL = 'https://cchat-be.onrender.com';
+const SOCKET_URL = "https://cchat-be.onrender.com";
 const home = () => {
   const { user } = useAuth();
   const router = useRouter();
@@ -135,15 +135,28 @@ const home = () => {
         transports: ["websocket"],
       });
 
+      socketRef.current.on("connect", () => {
+        socketRef.current.emit("join_room", user._id);
+        console.log("Connected to private room:", user._id);
+      });
+
+      socketRef.current.on("new_group_created", (res) => {
+        if (res.success) {
+          setConversations((prev) => {
+            const exists = prev.some((c) => c._id === res.data._id);
+            if (exists) return prev;
+            return [res.data, ...prev];
+          });
+        }
+      });
+
       socketRef.current.on("update_last_message", (data) => {
         setConversations((prevConversations) => {
-          // Kiểm tra xem chat này có đang hiển thị trên Home không
           const exists = prevConversations.some(
             (c) => c._id === data.conversationId,
           );
 
           if (!exists) {
-            // 👉 NẾU ĐÃ BỊ ẨN (DO XÓA): Bắt Home tự động load lại danh sách mới ngay lập tức
             fetchConversations();
             return prevConversations;
           }
@@ -172,7 +185,11 @@ const home = () => {
     initSocket();
 
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      if (socketRef.current) {
+        socketRef.current.off("new_group_created");
+        socketRef.current.off("update_last_message");
+        socketRef.current.disconnect();
+      }
     };
   }, [user?._id]);
 
