@@ -9,8 +9,14 @@ import {
   Modal,
   TouchableWithoutFeedback,
 } from "react-native";
-import React, { useRef, useState, useEffect } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { io } from "socket.io-client";
@@ -32,6 +38,7 @@ import BackButton from "@/components/BackButton";
 import Avatar from "@/components/Avatar";
 import Typo from "@/components/Typo";
 import MessageItem from "@/components/MessageItem";
+import CallBubble from "@/components/CallBubble";
 import Input from "@/components/Input";
 import api from "@/utils/api";
 import { useAuth } from "@/contexts/authContext";
@@ -65,10 +72,34 @@ const conversation = () => {
     });
   };
 
+  // Gọi lại từ call bubble
+  const handleCallBack = (callItem) => {
+    const targetId =
+      callItem.callerId?._id?.toString() === user?._id?.toString()
+        ? callItem.receiverId?._id?.toString()
+        : callItem.callerId?._id?.toString();
+    const targetName =
+      callItem.callerId?._id?.toString() === user?._id?.toString()
+        ? callItem.receiverId?.name
+        : callItem.callerId?.name;
+    router.push({
+      pathname: "/(main)/callscreen",
+      params: {
+        to: targetId,
+        callType: callItem.callType,
+        name: targetName || name,
+        avatar,
+        isIncoming: "false",
+        conversationId,
+      },
+    });
+  };
+
   // Các state quản lý UI và dữ liệu tin nhắn
   const [image, setImage] = useState(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [calls, setCalls] = useState([]); // 👈 call history
   const [editingMessage, setEditingMessage] = useState(null);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
@@ -152,6 +183,11 @@ const conversation = () => {
   const processMessage = (msg) => {
     return {
       id: msg._id,
+      _rawCreatedAt: msg.created_at
+        ? new Date(msg.created_at).getTime()
+        : msg.createdAt
+          ? new Date(msg.createdAt).getTime()
+          : 0,
       content: msg.content,
       sender: msg.senderId,
       createdAt: moment(msg.created_at || msg.createdAt).format("h:mm A"),
@@ -279,6 +315,42 @@ const conversation = () => {
     };
   }, [conversationId, user]);
 
+  // Fetch riêng call history — gọi lại mỗi khi focus vào màn hình
+  const fetchCalls = useCallback(async () => {
+    if (!conversationId || isGroup) return;
+    try {
+      const callRes = await api.get(`/calls/conversation/${conversationId}`);
+      if (callRes.data.success) setCalls(callRes.data.data);
+    } catch (error) {
+      console.log("Fetch calls error:", error);
+    }
+  }, [conversationId, isGroup]);
+
+  // ✅ Re-fetch calls mỗi khi quay lại màn hình (sau khi gọi xong)
+  useFocusEffect(
+    useCallback(() => {
+      fetchCalls();
+    }, [fetchCalls]),
+  );
+
+  // Merge messages + calls thành 1 timeline, sort mới nhất lên đầu (inverted FlatList)
+  const mergedTimeline = useMemo(() => {
+    const msgItems = messages.map((m) => ({
+      ...m,
+      _itemType: "message",
+      _sortTime: m._rawCreatedAt || 0,
+    }));
+    const callItems = calls.map((c) => ({
+      ...c,
+      id: c._id,
+      _itemType: "call",
+      _sortTime: c.created_at ? new Date(c.created_at).getTime() : 0,
+    }));
+    return [...msgItems, ...callItems].sort(
+      (a, b) => b._sortTime - a._sortTime,
+    );
+  }, [messages, calls]);
+
   // Hàm xử lý gửi tin nhắn (bao gồm cả gửi mới và sửa tin)
   const handleSendMessage = async () => {
     if (!message.trim() && !image) return;
@@ -314,6 +386,7 @@ const conversation = () => {
       attachement: image,
       sender: user,
       createdAt: moment().format("h:mm A"),
+      _rawCreatedAt: Date.now(),
       isMe: true,
       isLocal: true,
     };
@@ -521,7 +594,7 @@ const conversation = () => {
           )}
           <FlatList
             ref={flatListRef}
-            data={messages}
+            data={mergedTimeline}
             inverted
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.messagesContainer}
@@ -531,22 +604,33 @@ const conversation = () => {
                 animated: true,
               });
             }}
-            renderItem={({ item }) => (
-              <MessageItem
-                item={item}
-                isDirect={type === "direct"}
-                onDelete={(deleteId) =>
-                  setMessages((prev) => prev.filter((m) => m.id !== deleteId))
-                }
-                onEdit={(msg) => {
-                  setEditingMessage(msg);
-                  setMessage(msg.content);
-                }}
-                themeBubbleColor={currentTheme.bubbleColor}
-                themeTextColor={currentTheme.textColor}
-              />
-            )}
-            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              if (item._itemType === "call") {
+                return (
+                  <CallBubble
+                    item={item}
+                    currentUserId={user?._id}
+                    onCallBack={handleCallBack}
+                  />
+                );
+              }
+              return (
+                <MessageItem
+                  item={item}
+                  isDirect={type === "direct"}
+                  onDelete={(deleteId) =>
+                    setMessages((prev) => prev.filter((m) => m.id !== deleteId))
+                  }
+                  onEdit={(msg) => {
+                    setEditingMessage(msg);
+                    setMessage(msg.content);
+                  }}
+                  themeBubbleColor={currentTheme.bubbleColor}
+                  themeTextColor={currentTheme.textColor}
+                />
+              );
+            }}
+            keyExtractor={(item) => `${item._itemType}-${item.id || item._id}`}
           />
 
           <View style={[styles.footer, { backgroundColor: "transparent" }]}>

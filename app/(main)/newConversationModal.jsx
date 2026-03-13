@@ -39,7 +39,10 @@ const newConversationModal = () => {
   const [groupName, setGroupName] = useState("");
   const [findedUsers, setFoundUsers] = useState("");
   const debouncedSearch = useDebounce(findedUsers, 500);
+
+  // Lưu cả object user thay vì chỉ _id, để render chip khi search thay đổi
   const [selectedParticipants, setSelectedParticipants] = useState([]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [isFetchingUsers, setIsFetchingUsers] = useState(true);
@@ -69,13 +72,18 @@ const newConversationModal = () => {
     if (user?._id) fetchUsers();
   }, [user, isGroupMode, debouncedSearch]);
 
-  const toggleParticipant = (user) => {
+  const toggleParticipant = (targetUser) => {
     setSelectedParticipants((prev) => {
-      if (prev.includes(user._id)) {
-        return prev.filter((id) => id !== user._id);
+      const alreadySelected = prev.find((p) => p._id === targetUser._id);
+      if (alreadySelected) {
+        return prev.filter((p) => p._id !== targetUser._id);
       }
-      return [...prev, user._id];
+      return [...prev, targetUser];
     });
+  };
+
+  const removeParticipant = (userId) => {
+    setSelectedParticipants((prev) => prev.filter((p) => p._id !== userId));
   };
 
   const onSelectUser = async (targetUser) => {
@@ -171,7 +179,8 @@ const newConversationModal = () => {
 
       const payload = {
         name: groupName,
-        participants: [...selectedParticipants, user._id],
+        // Lấy _id từ mảng object
+        participants: [...selectedParticipants.map((p) => p._id), user._id],
         type: "group",
         avatar: groupAvatarUrl,
         createdBy: user._id,
@@ -214,6 +223,7 @@ const newConversationModal = () => {
       setImage(result.assets[0].uri);
     }
   };
+
   return (
     <ScreenWrapper isModal={true} showPattern={false}>
       <View style={styles.container}>
@@ -236,6 +246,37 @@ const newConversationModal = () => {
                 onChangeText={setGroupName}
               />
             </View>
+            {/* Search box cho group mode */}
+            <View
+              style={[styles.groupNameContainer, { marginTop: spacingY._10 }]}
+            >
+              <Input
+                placeholder="Tìm thành viên..."
+                value={findedUsers}
+                onChangeText={setFoundUsers}
+              />
+            </View>
+            {/* Chip hiển thị người đã chọn — không bị mất khi search thay đổi */}
+            {selectedParticipants.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.chipScroll}
+                contentContainerStyle={styles.chipContainer}
+              >
+                {selectedParticipants.map((p) => (
+                  <TouchableOpacity
+                    key={p._id}
+                    style={styles.chip}
+                    onPress={() => removeParticipant(p._id)}
+                  >
+                    <Avatar uri={p.avatar} size={22} />
+                    <Text style={styles.chipText}>{p.name}</Text>
+                    <AntDesign name="close" size={12} color={colors.white} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </View>
         ) : (
           <View style={styles.directInfoContainer}>
@@ -261,7 +302,10 @@ const newConversationModal = () => {
             />
           ) : (
             users?.map((item, index) => {
-              const isSelected = selectedParticipants.includes(item._id);
+              // Check bằng _id từ mảng object
+              const isSelected = selectedParticipants.some(
+                (p) => p._id === item._id,
+              );
               return (
                 <TouchableOpacity
                   key={index}
@@ -333,6 +377,30 @@ const styles = StyleSheet.create({
   },
   groupNameContainer: {
     width: "100%",
+  },
+  chipScroll: {
+    marginTop: spacingY._10,
+    alignSelf: "flex-start",
+  },
+  chipContainer: {
+    flexDirection: "row",
+    gap: spacingX._8,
+    paddingRight: spacingX._10,
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: colors.primary,
+    borderRadius: radius._20,
+    paddingHorizontal: spacingX._10,
+    paddingVertical: 4,
+  },
+  chipText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: "500",
+    maxWidth: 80,
   },
   contactRow: {
     flexDirection: "row",

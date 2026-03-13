@@ -1,3 +1,4 @@
+// src/contexts/socketContext.js  ← THAY THẾ FILE CŨ
 import React, {
   createContext,
   useContext,
@@ -11,7 +12,6 @@ import { useAuth } from "./authContext";
 import { useRouter } from "expo-router";
 
 const SOCKET_URL = "https://cchat-be.onrender.com";
-
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
@@ -35,8 +35,16 @@ export const SocketProvider = ({ children }) => {
       // ─── Lắng nghe cuộc gọi đến (toàn app) ───────────────────────────────
       s.on(
         "incoming_call",
-        ({ from, callerName, callerAvatar, offer, callType }) => {
-          // Điều hướng sang CallScreen với đầy đủ thông tin
+        ({
+          from,
+          callerName,
+          callerAvatar,
+          offer,
+          callType,
+          conversationId,
+          callId,
+        }) => {
+          // ✅ Truyền thêm callId xuống callscreen để receiver dùng khi accept/reject
           router.push({
             pathname: "/(main)/callscreen",
             params: {
@@ -46,6 +54,8 @@ export const SocketProvider = ({ children }) => {
               avatar: callerAvatar,
               offer: JSON.stringify(offer),
               isIncoming: "true",
+              conversationId,
+              callId: callId || "", // 👈 THÊM
             },
           });
         },
