@@ -31,7 +31,9 @@ export const SocketProvider = ({ children }) => {
         auth: { token },
         transports: ["websocket"],
       });
-
+      s.on("connect", () => {
+        s.emit("join_room", user._id);
+      });
       // ─── Lắng nghe cuộc gọi đến (toàn app) ───────────────────────────────
       s.on(
         "incoming_call",

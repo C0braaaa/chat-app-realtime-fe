@@ -9,6 +9,9 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { FontAwesome5, Ionicons, Feather } from "@expo/vector-icons";
+import * as MediaLibrary from "expo-media-library";
+import * as FileSystem from "expo-file-system";
+import { Modal, Dimensions } from "react-native";
 
 import { useAuth } from "@/contexts/authContext";
 import { colors, radius, spacingX, spacingY } from "@/constants/theme";
@@ -30,6 +33,25 @@ const MessageItem = ({
   const isMe = item.isMe;
   const isLocal = item.isLocal;
   const [showMenu, setShowMenu] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+
+  const handleSaveImage = async (imageUrl) => {
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Lỗi", "Cần quyền truy cập thư viện ảnh");
+        return;
+      }
+
+      const filename =
+        FileSystem.documentDirectory + "cchat_" + Date.now() + ".jpg";
+      const { uri } = await FileSystem.downloadAsync(imageUrl, filename);
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Alert.alert("Thành công", "Đã lưu ảnh vào thư viện");
+    } catch (error) {
+      Alert.alert("Lỗi", "Không thể lưu ảnh");
+    }
+  };
 
   const handleDelete = async () => {
     setShowMenu(false);
@@ -89,17 +111,55 @@ const MessageItem = ({
           )}
           {item.attachement && (
             <View>
-              <Image
-                source={item.attachement}
-                contentFit={"cover"}
-                style={styles.attachment}
-                transition={100}
-              />
-              {isLocal && (
-                <View style={styles.loadingOverlay}>
-                  <ActivityIndicator size="small" color={colors.white} />
+              <TouchableOpacity onPress={() => setShowImageViewer(true)}>
+                <Image
+                  source={item.attachement}
+                  contentFit={"cover"}
+                  style={styles.attachment}
+                  transition={100}
+                />
+                {isLocal && (
+                  <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="small" color={colors.white} />
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Fullscreen Image Viewer */}
+              <Modal
+                visible={showImageViewer}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowImageViewer(false)}
+              >
+                <View style={styles.imageViewerOverlay}>
+                  {/* Nút đóng */}
+                  <TouchableOpacity
+                    style={styles.closeImageBtn}
+                    onPress={() => setShowImageViewer(false)}
+                  >
+                    <Ionicons name="close" size={30} color="#fff" />
+                  </TouchableOpacity>
+
+                  {/* Nút lưu */}
+                  <TouchableOpacity
+                    style={styles.saveImageBtn}
+                    onPress={() => handleSaveImage(item.attachement)}
+                  >
+                    <Ionicons name="download-outline" size={26} color="#fff" />
+                    <Typo color="#fff" size={14}>
+                      Lưu ảnh
+                    </Typo>
+                  </TouchableOpacity>
+
+                  {/* Ảnh fullscreen */}
+                  <Image
+                    source={{ uri: item.attachement }}
+                    style={styles.fullscreenImage}
+                    contentFit="contain"
+                  />
                 </View>
-              )}
+              </Modal>
             </View>
           )}
           {item.content ? (
@@ -213,5 +273,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 10,
     gap: 5,
+  },
+  imageViewerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullscreenImage: {
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").height * 0.8,
+  },
+  closeImageBtn: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 8,
+  },
+  saveImageBtn: {
+    position: "absolute",
+    bottom: 60,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    zIndex: 10,
   },
 });

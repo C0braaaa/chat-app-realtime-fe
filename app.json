@@ -3,7 +3,7 @@
     "name": "C Chat",
     "slug": "c-chat",
     "scheme": "c-chat",
-    "version": "1.1.20",
+    "version": "1.1.24",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
@@ -29,7 +29,9 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.INTERNET"
+        "android.permission.INTERNET",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
