@@ -7,7 +7,7 @@ export const registerSchema = z
       .trim()
       .min(1, "Tên là bắt buộc")
       .min(6, "Tên phải có ít nhất 6 ký tự")
-      .max(50, "Tên tối đa 50 ký tự"),
+      .max(30, "Tên tối đa 30 ký tự"),
 
     email: z
       .string({ required_error: "Email là bắt buộc" })

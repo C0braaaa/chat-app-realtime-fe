@@ -6,12 +6,12 @@ import {
   Alert,
   Modal,
   TouchableWithoutFeedback,
+  Dimensions,
 } from "react-native";
 import React, { useState } from "react";
 import { FontAwesome5, Ionicons, Feather } from "@expo/vector-icons";
 import * as MediaLibrary from "expo-media-library";
 import * as FileSystem from "expo-file-system";
-import { Modal, Dimensions } from "react-native";
 
 import { useAuth } from "@/contexts/authContext";
 import { colors, radius, spacingX, spacingY } from "@/constants/theme";
