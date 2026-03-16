@@ -78,7 +78,7 @@ export const SocketProvider = ({ children }) => {
   }, [isAuthenticated, user?._id]);
 
   return (
-    <SocketContext.Provider value={{ socket }}>
+    <SocketContext.Provider value={{ socket, socketRef }}>
       {children}
     </SocketContext.Provider>
   );

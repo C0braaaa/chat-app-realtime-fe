@@ -25,9 +25,7 @@ import InCallManager from "react-native-incall-manager";
 const ICE_SERVERS = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
-    {
-      urls: "stun:stun.relay.metered.ca:80",
-    },
+    { urls: "stun:stun.relay.metered.ca:80" },
     {
       urls: "turn:global.relay.metered.ca:80",
       username: "a1d22d347b649afe34fa67db",
@@ -53,12 +51,10 @@ const ICE_SERVERS = {
 };
 
 export default function CallScreen() {
-  const { socket } = useSocket();
+  const { socket, socketRef } = useSocket(); // 👈 lấy thêm socketRef
   const { user } = useAuth();
   const router = useRouter();
 
-  // Params khi MÌNH gọi:      to, callType, name, avatar, conversationId
-  // Params khi NHẬN cuộc gọi: from, offer, callType, name, avatar, isIncoming, conversationId, callId
   const {
     to,
     from,
@@ -73,9 +69,8 @@ export default function CallScreen() {
 
   const isVideo = callType === "video";
   const remoteUserId = isIncoming === "true" ? from : to;
-  const isMissedCall = isIncoming === "true" && !offer; // Tap notification khi app bị kill
+  const isMissedCall = isIncoming === "true" && !offer;
 
-  // ─── State ─────────────────────────────────────────────────────────────────
   const [callStatus, setCallStatus] = useState(
     isIncoming === "true" ? "incoming" : "calling",
   );
@@ -86,25 +81,27 @@ export default function CallScreen() {
   const [isFrontCamera, setIsFrontCamera] = useState(true);
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
 
-  // ─── Refs ───────────────────────────────────────────────────────────────────
   const pcRef = useRef(null);
   const pendingCandidates = useRef([]);
   const callStatusRef = useRef(isIncoming === "true" ? "incoming" : "calling");
-
-  // ✅ callId ref — tránh stale closure trong event handlers
-  // Receiver dùng incomingCallId từ params, Caller nhận qua socket "call_initiated"
   const callIdRef = useRef(incomingCallId || null);
 
-  // ─── PeerConnection ─────────────────────────────────────────────────────────
+  // ─── Helper: lấy socket an toàn dùng ref ────────────────────────────────
+  const getSocket = () => socketRef?.current || socket;
+
+  // ─── PeerConnection ──────────────────────────────────────────────────────
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
 
     pc.onicecandidate = (event) => {
-      if (event.candidate && socket) {
-        socket.emit("ice_candidate", {
-          to: remoteUserId,
-          candidate: event.candidate,
-        });
+      if (event.candidate) {
+        const s = getSocket();
+        if (s) {
+          s.emit("ice_candidate", {
+            to: remoteUserId,
+            candidate: event.candidate,
+          });
+        }
       }
     };
 
@@ -130,7 +127,7 @@ export default function CallScreen() {
     return pc;
   };
 
-  // ─── Lấy camera/mic ─────────────────────────────────────────────────────────
+  // ─── Lấy camera/mic ─────────────────────────────────────────────────────
   const getLocalStream = async () => {
     try {
       const stream = await mediaDevices.getUserMedia({
@@ -151,7 +148,7 @@ export default function CallScreen() {
     }
   };
 
-  // ─── A. Caller: tạo offer ───────────────────────────────────────────────────
+  // ─── Caller: tạo offer ───────────────────────────────────────────────────
   const startCall = async () => {
     const pc = createPeerConnection();
     const stream = await getLocalStream();
@@ -165,16 +162,16 @@ export default function CallScreen() {
     });
     await pc.setLocalDescription(offerSDP);
 
-    socket.emit("call_user", {
+    const s = getSocket();
+    s?.emit("call_user", {
       to: remoteUserId,
       offer: offerSDP,
       callType,
-      conversationId, // server dùng để tạo call record
+      conversationId,
     });
-    // callId sẽ được nhận về qua event "call_initiated"
   };
 
-  // ─── B. Receiver: chấp nhận cuộc gọi ───────────────────────────────────────
+  // ─── Receiver: chấp nhận cuộc gọi ───────────────────────────────────────
   const acceptCall = async () => {
     setCallStatus("connected");
     const pc = createPeerConnection();
@@ -194,19 +191,19 @@ export default function CallScreen() {
     const answerSDP = await pc.createAnswer();
     await pc.setLocalDescription(answerSDP);
 
-    // ✅ Truyền callId → server cập nhật startedAt
-    socket.emit("accept_call", {
+    const s = getSocket();
+    s?.emit("accept_call", {
       to: remoteUserId,
       answer: answerSDP,
       callId: callIdRef.current,
     });
   };
 
-  // ─── Kết thúc cuộc gọi ──────────────────────────────────────────────────────
+  // ─── Kết thúc cuộc gọi ──────────────────────────────────────────────────
   const endCall = (notifyRemote = true) => {
-    if (notifyRemote && socket) {
-      // ✅ Truyền callId → server cập nhật status + duration
-      socket.emit("end_call", {
+    if (notifyRemote) {
+      const s = getSocket();
+      s?.emit("end_call", {
         to: remoteUserId,
         callId: callIdRef.current,
       });
@@ -222,17 +219,17 @@ export default function CallScreen() {
     router.back();
   };
 
-  // ─── Từ chối cuộc gọi ───────────────────────────────────────────────────────
+  // ─── Từ chối cuộc gọi ───────────────────────────────────────────────────
   const rejectCall = () => {
-    // ✅ Truyền callId → server cập nhật status = rejected
-    socket?.emit("reject_call", {
+    const s = getSocket();
+    s?.emit("reject_call", {
       to: remoteUserId,
       callId: callIdRef.current,
     });
     router.back();
   };
 
-  // ─── Toggle mic / camera ────────────────────────────────────────────────────
+  // ─── Toggle controls ────────────────────────────────────────────────────
   const toggleMute = () => {
     if (localStream) {
       localStream.getAudioTracks().forEach((t) => {
@@ -264,11 +261,12 @@ export default function CallScreen() {
     setIsSpeakerOn(next);
   };
 
-  // ─── Socket events ──────────────────────────────────────────────────────────
+  // ─── Socket events ───────────────────────────────────────────────────────
   useEffect(() => {
-    if (!socket) return;
+    // Dùng socketRef.current để không bị null khi receiver mount
+    const s = socketRef?.current || socket;
+    if (!s) return;
 
-    // ✅ Caller nhận callId sau khi server tạo xong call record
     const onCallInitiated = ({ callId }) => {
       if (callId) callIdRef.current = callId;
     };
@@ -300,22 +298,22 @@ export default function CallScreen() {
       }
     };
 
-    socket.on("call_initiated", onCallInitiated); // 👈 THÊM
-    socket.on("call_accepted", onCallAccepted);
-    socket.on("call_ended", onCallEnded);
-    socket.on("call_rejected", onCallRejected);
-    socket.on("ice_candidate", onIceCandidate);
+    s.on("call_initiated", onCallInitiated);
+    s.on("call_accepted", onCallAccepted);
+    s.on("call_ended", onCallEnded);
+    s.on("call_rejected", onCallRejected);
+    s.on("ice_candidate", onIceCandidate);
 
     return () => {
-      socket.off("call_initiated", onCallInitiated);
-      socket.off("call_accepted", onCallAccepted);
-      socket.off("call_ended", onCallEnded);
-      socket.off("call_rejected", onCallRejected);
-      socket.off("ice_candidate", onIceCandidate);
+      s.off("call_initiated", onCallInitiated);
+      s.off("call_accepted", onCallAccepted);
+      s.off("call_ended", onCallEnded);
+      s.off("call_rejected", onCallRejected);
+      s.off("ice_candidate", onIceCandidate);
     };
-  }, [socket]);
+  }, [socket]); // re-run khi socket state ready
 
-  // ─── Mount ──────────────────────────────────────────────────────────────────
+  // ─── Mount ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (isMissedCall) {
       setCallStatus("missed");
@@ -325,8 +323,6 @@ export default function CallScreen() {
     if (isIncoming !== "true") {
       startCall();
 
-      // Timeout 20s → nếu chưa kết nối được thì tự kết thúc
-      // Server giữ nguyên status "missed" — không cần update thêm
       const timeout = setTimeout(() => {
         if (callStatusRef.current !== "connected") {
           Alert.alert("Không có người trả lời", `${name} không bắt máy`);
@@ -347,7 +343,7 @@ export default function CallScreen() {
     };
   }, []);
 
-  // ─── UI ─────────────────────────────────────────────────────────────────────
+  // ─── UI ──────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
@@ -590,7 +586,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 20,
   },
-  speakerBtnActive: {
-    backgroundColor: "rgba(255,255,255,0.45)",
-  },
+  speakerBtnActive: { backgroundColor: "rgba(255,255,255,0.45)" },
 });
